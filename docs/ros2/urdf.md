@@ -1,129 +1,142 @@
 ---
-id: ros2-urdf
-title: "Robot Modeling with URDF"
-sidebar_label: "URDF Robot Models"
-estimated_time: 4
-week: 5 # Part of week 5
-module: "ROS 2"
-prerequisites:
-  - "ros2-tf2"
-learning_objectives:
-  - "Understand the URDF (Unified Robot Description Format) for describing a robot's structure"
-  - "Create a simple URDF file for a two-wheeled robot"
-  - "Use XACRO to simplify URDF files"
-  - "Visualize a robot model in RViz2 using robot_state_publisher"
+id: urdf
+title: 'Module 1: Robot Modeling with URDF'
+sidebar_label: 'URDF'
 ---
 
-# Robot Modeling with URDF
+## Modeling Robots with URDF
 
-A **URDF (Unified Robot Description Format)** file is an XML file used in ROS to describe all the physical elements of a robot model. This description includes the robot's links (its physical parts), joints (which connect the links), and their visual and collision properties.
+The Unified Robot Description Format (URDF) is an XML format used in ROS to describe all elements of a robot. This includes the robot's links, joints, sensors, and their visual appearance. A URDF file is the foundation for simulation, visualization, and collision detection.
 
-## XACRO: Better URDFs
+### Core Components of a URDF File
 
-Writing URDFs by hand can be repetitive. **XACRO (XML Macros)** is a tool that lets you create more readable and maintainable URDF files. You can define constants, create simple mathematical expressions, and use macros to avoid copying and pasting. XACRO files are processed to generate a final URDF file.
+A URDF file consists of several key tags: `<robot>`, `<link>`, and `<joint>`.
 
-## Key Components of URDF
+*   **`<robot>`:** The root tag of the URDF file. It has a `name` attribute.
+*   **`<link>`:** This element describes a rigid part of the robot. A link has:
+    *   `<visual>`: The visual appearance of the link (shape, color, texture).
+    *   `<collision>`: The collision geometry of the link, used by the physics engine.
+    *   `<inertial>`: The inertial properties (mass, center of mass, inertia tensor).
+*   **`<joint>`:** This element describes the kinematics and dynamics of a joint, which connects two links. A joint has:
+    *   `<parent>` and `<child>`: The two links connected by the joint.
+    *   `<origin>`: The transform (position and orientation) of the joint relative to the parent link.
+    *   `type`: The type of joint (e.g., `revolute`, `continuous`, `prismatic`, `fixed`).
+    *   `<axis>` (for non-fixed joints): The axis of rotation or translation.
+    *   `<limit>` (for `revolute` and `prismatic` joints): The joint limits (e.g., upper and lower angles).
 
--   **`<link>`**: Describes a rigid part of the robot. It has elements for its visual appearance (`<visual>`), collision geometry (`<collision>`), and inertial properties (`<inertial>`).
--   **`<joint>`**: Describes the connection between two links. It specifies the parent and child links, the joint type (e.g., `revolute`, `continuous`, `prismatic`, `fixed`), and its axis of motion.
+### Example: A Simple Two-Link Robot Arm
 
-## Code Examples
-
-### 1. Simple Robot XACRO File
-
-This example defines a simple two-wheeled robot with a caster wheel.
+Here is a basic URDF for a simple robot arm with two links and one revolute joint.
 
 ```xml
-<!-- two_wheel_robot.urdf.xacro -->
-<robot name="two_wheel_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+<!-- simple_arm.urdf -->
+<robot name="simple_arm">
 
-  <xacro:property name="wheel_radius" value="0.05" />
-  <xacro:property name="wheel_length" value="0.02" />
-  <xacro:property name="base_width" value="0.2" />
-
+  <!-- Base Link -->
   <link name="base_link">
     <visual>
       <geometry>
-        <box size="${base_width} 0.3 0.1"/>
+        <cylinder length="0.2" radius="0.1"/>
       </geometry>
+      <material name="blue">
+        <color rgba="0 0 1 1"/>
+      </material>
     </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.2" radius="0.1"/>
+      </geometry>
+    </collision>
+    <inertial>
+        <mass value="1"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
   </link>
 
-  <link name="left_wheel_link">
+  <!-- Arm Link -->
+  <link name="arm_link">
     <visual>
       <geometry>
-        <cylinder radius="${wheel_radius}" length="${wheel_length}"/>
+        <box size="0.5 0.1 0.1"/>
       </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
     </visual>
-  </link>
-
-  <joint name="base_to_left_wheel" type="continuous">
-    <parent link="base_link"/>
-    <child link="left_wheel_link"/>
-    <origin xyz="0 ${base_width/2 + wheel_length/2} 0" rpy="-1.5707 0 0"/>
-    <axis xyz="0 0 1"/>
-  </joint>
-
-  <link name="right_wheel_link">
-    <visual>
+    <collision>
       <geometry>
-        <cylinder radius="${wheel_radius}" length="${wheel_length}"/>
+        <box size="0.5 0.1 0.1"/>
       </geometry>
-    </visual>
+    </collision>
+    <inertial>
+        <mass value="0.5"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
   </link>
 
-  <joint name="base_to_right_wheel" type="continuous">
+  <!-- Shoulder Joint -->
+  <joint name="shoulder_joint" type="revolute">
     <parent link="base_link"/>
-    <child link="right_wheel_link"/>
-    <origin xyz="0 -${base_width/2 + wheel_length/2} 0" rpy="1.5707 0 0"/>
-    <axis xyz="0 0 -1"/>
+    <child link="arm_link"/>
+    <origin xyz="0 0 0.1" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.57" upper="1.57" effort="10" velocity="1"/>
   </joint>
 
 </robot>
 ```
 
-### 2. Launch File for Visualization
+### Visualizing URDF in RViz2
 
-This launch file converts the XACRO to URDF, starts the `robot_state_publisher` to broadcast the robot's transforms, and opens RViz2 for visualization.
+To visualize and control this robot model, you can use the `robot_state_publisher` and `joint_state_publisher_gui` packages.
 
-```python
-# display_robot.launch.py
-import os
-from ament_index_python.packages import get_package_share_directory
-from launch import LaunchDescription
-from launch_ros.actions import Node
-import xacro
+1.  **Save the URDF:** Save the XML code above as `simple_arm.urdf`.
+2.  **Create a Launch File:** A ROS 2 launch file can start all the necessary nodes.
 
-def generate_launch_description():
-    pkg_path = os.path.join(get_package_share_directory('<your_package_name>'))
-    xacro_file = os.path.join(pkg_path, 'urdf', 'two_wheel_robot.urdf.xacro')
-    robot_description_config = xacro.process_file(xacro_file)
-    robot_description = robot_description_config.toxml()
+    ```python
+    # view_robot.launch.py
+    import os
+    from ament_index_python.packages import get_package_share_directory
+    from launch import LaunchDescription
+    from launch.actions import DeclareLaunchArgument
+    from launch.substitutions import LaunchConfiguration
+    from launch_ros.actions import Node
 
-    robot_state_publisher_node = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        name='robot_state_publisher',
-        parameters=[{'robot_description': robot_description}]
-    )
+    def generate_launch_description():
+        urdf_file_name = 'simple_arm.urdf'
+        urdf = os.path.join(
+            get_package_share_directory('your_package_name'),
+            urdf_file_name)
+        with open(urdf, 'r') as infp:
+            robot_desc = infp.read()
 
-    rviz_node = Node(
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
-        arguments=['-d', os.path.join(pkg_path, 'config', 'view_robot.rviz')]
-    )
+        return LaunchDescription([
+            DeclareLaunchArgument(
+                'use_sim_time',
+                default_value='false',
+                description='Use simulation (Gazebo) clock if true'),
+            Node(
+                package='robot_state_publisher',
+                executable='robot_state_publisher',
+                name='robot_state_publisher',
+                output='screen',
+                parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time'), 'robot_description': robot_desc}],
+                arguments=[urdf]),
+            Node(
+                package='joint_state_publisher_gui',
+                executable='joint_state_publisher_gui',
+                name='joint_state_publisher_gui',
+                output='screen'),
+            Node(
+                package='rviz2',
+                executable='rviz2',
+                name='rviz2',
+                output='screen',
+                arguments=['-d', os.path.join(get_package_share_directory('your_package_name'), 'urdf.rviz')])
+        ])
+    ```
+    *Note: You'll need to create a simple RViz configuration file (`urdf.rviz`) and replace `your_package_name` with the name of your ROS 2 package.*
 
-    return LaunchDescription([
-        robot_state_publisher_node,
-        rviz_node
-    ])
-```
+3.  **Run the Launch File:** When you run this launch file, RViz2 will open and display the 3D model of your robot. The `joint_state_publisher_gui` will provide a slider to move the `shoulder_joint` and see the robot model update in real-time.
 
-### How to Run
-
-1.  Place the XACRO file in a `urdf` directory in your package.
-2.  Create a simple RViz2 configuration file (`view_robot.rviz`) and save it in a `config` directory.
-3.  Create the launch file in your `launch` directory.
-4.  Build and launch: `ros2 launch <your_package_name> display_robot.launch.py`.
-5.  In RViz2, set the "Fixed Frame" to `base_link` and add the "RobotModel" display to see your robot.
+URDF is a fundamental tool for robotics development in ROS 2. We will use it as the basis for simulating our humanoid robot in Isaac Sim.

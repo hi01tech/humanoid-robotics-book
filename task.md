@@ -8,11 +8,12 @@
 - [x] P1.4: Draft **3 Hardware Setup Guides** (`docs/setup/`).
 - [x] P1.5: Create **Weeks 1-3 content files** (`docs/introduction/`).
 
-## Phase 2: Core Content & Backend Scaffolding
+## Phase 3: RAG Backend & Content Integration
 
-- [ ] P2.1: Develop **Modules 1-3** content (ROS 2, Digital Twin, Isaac Sim) with runnable code (FR-012).
-- [x] P2.2: Establish **Docusaurus Sidebar Structure** and Navigation.
-- [x] P2.3: Set up **FastAPI RAG Backend** shell (`server/`) with Qdrant/Neon placeholders.
+- [x] P3.1: Implement **Neon Postgres/Qdrant connection logic**.
+- [ ] P3.2: Create **RAG Indexing Service** to parse, chunk, embed, and load all `docs/` content into Qdrant.
+- [ ] P3.3: Implement **RAG Query Service** in the FastAPI backend for user-facing search.
+- [ ] P3.4: Integrate RAG search results into the Docusaurus frontend.
 
 ---
 *Status reflects work up to the completion of the FastAPI RAG Backend shell (P2.3).*

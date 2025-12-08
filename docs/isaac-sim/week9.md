@@ -1,90 +1,110 @@
 ---
-id: isaac-ros-slam
-title: "Week 9: SLAM with Isaac ROS"
-sidebar_label: "Week 9: Isaac ROS SLAM"
-estimated_time: 5
-week: 9
-module: "NVIDIA Isaac"
-prerequisites:
-  - "intro-isaac-ros"
-learning_objectives:
-  - "Understand the principles behind Visual SLAM"
-  - "Configure the Isaac ROS Visual SLAM package"
-  - "Run SLAM using data from the simulated robot in Isaac Sim"
-  - "Visualize the generated map and robot trajectory in RViz2"
+id: week9
+title: 'Module 3: Robots and ROS 2 in Isaac Sim'
+sidebar_label: 'Week 9: Importing Robots'
 ---
 
-# Week 9: SLAM with Isaac ROS
+## Week 9: Importing and Controlling Robots with ROS 2
 
-**Simultaneous Localization and Mapping (SLAM)** is the process by which a robot builds a map of an unknown environment while simultaneously keeping track of its own location within that map. It is a fundamental capability for autonomous navigation.
+Last week, we familiarized ourselves with the Isaac Sim environment. This week, our goal is to bring our robot into the simulation and establish the ROS 2 communication bridge we've been discussing.
 
-**Isaac ROS Visual SLAM** is a GPU-accelerated package that provides a real-time solution using a stereo camera. It is highly optimized for NVIDIA hardware and is designed to be robust and accurate.
+### Importing a URDF
 
-## The Visual SLAM Pipeline
+The first step in creating our digital twin is to import the robot's description. Isaac Sim has a built-in URDF importer that converts a URDF file into the Universal Scene Description (USD) format, which is the native format for Omniverse.
 
-1.  **Input**: The node requires synchronized stereo camera images and camera calibration information.
-2.  **Feature Tracking**: The algorithm identifies and tracks visual features across consecutive image frames.
-3.  **Odometry Estimation**: By observing the motion of features, the algorithm estimates the robot's movement.
-4.  **Loop Closure & Optimization**: The algorithm recognizes previously visited locations (loop closures) and uses this information to correct drift and build a globally consistent map.
-5.  **Output**: The node outputs the robot's estimated pose (position and orientation), the map, and other visualization markers.
+The importer tool can be found under `Window > Isaac > Importer > URDF`. When you import your URDF, the tool will:
+*   Parse the `<link>` and `<joint>` structure.
+*   Create a USD prim for each link and joint.
+*   Assign physics properties based on the `<inertial>` and `<collision>` tags.
+*   Set up the joint types and limits.
 
-## Code Example: Launching Isaac ROS SLAM
+It's crucial to have a well-defined URDF with accurate collision meshes and inertial properties for the simulation to be stable and realistic.
 
-Running the SLAM system involves creating a launch file that starts the `visual_slam_node` and remaps the necessary topics from your camera and robot.
+#### The URDF Import Process
+1.  Open the URDF Importer.
+2.  Select your input `.urdf` file.
+3.  Choose an output directory where the converted USD assets will be saved.
+4.  Click "Import".
+
+After the import, you will have a new USD file representing your robot. You can drag this file from the Content Browser into your scene to add your robot to the world.
+
+### Setting up the ROS 2 Bridge
+
+Once the robot is in the scene, the next step is to enable ROS 2 communication. Isaac Sim provides a set of tools, primarily through its "Action Graph" visual scripting interface, to connect simulation elements to ROS 2 topics.
+
+Here's a standard setup for a robot arm or a humanoid:
+
+1.  **Select the Robot Prim:** In the Stage, find the root prim of your imported robot.
+2.  **Create an Action Graph:** In the Property panel for the robot prim, click `+ Add > Graph > Action Graph`.
+3.  **Open the Action Graph Editor:** Click the "Edit" button next to the newly created graph.
+
+Inside the Action Graph, you will add nodes to handle ROS 2 communication:
+
+*   **`On Playback Tick` Node:** This node fires on every simulation step, driving the execution of the graph.
+*   **`ROS2 Context` Node:** Establishes the connection to the ROS 2 domain.
+*   **`ROS2 Subscribe JointState` Node:** This node subscribes to a topic (e.g., `/joint_command`) of type `sensor_msgs/msg/JointState`. The received joint positions will be used to drive the robot's joints.
+*   **`Articulation Kinematics` Node:** This is the node that takes the target joint positions from the subscriber and applies them to the robot's articulation (the physics representation of the robot's joints).
+*   **`ROS2 Publish JointState` Node:** This node reads the current state of the robot's joints from the simulation and publishes them to a topic (e.g., `/joint_states`). This is crucial for `robot_state_publisher` and other ROS 2 nodes that need to know the robot's current configuration.
+*   **`ROS2 Publish Clock` Node:** Publishes the simulation time to the `/clock` topic. This is essential for ROS 2 nodes to operate in sync with the simulation. When using a simulator, you should always set the `use_sim_time` parameter to `true` in your ROS 2 nodes.
+
+Connecting these nodes in the Action Graph creates a complete ROS 2 bridge for your robot. The `ROS2 Subscribe JointState` node receives commands, and the `ROS2 Publish JointState` node sends back the robot's status.
+
+### Example: A ROS 2 Bridge Launch Script
+
+While you can set up the bridge manually using the UI, the real power of Isaac Sim comes from scripting. You can write a Python script that automates the entire process: loading the robot, creating the world, and setting up the ROS 2 bridge.
 
 ```python
-# slam.launch.py
-from launch import LaunchDescription
-from launch_ros.actions import Node
-from launch_ros.substitutions import FindPackageShare
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+# ros_bridge_setup.py
+from omni.isaac.core.tasks import BaseTask
+from omni.isaac.core.articulations import Articulation
+from omni.isaac.core.utils.prims import get_prim_at_path
+from omni.isaac.core.utils.stage import add_reference_to_stage
+from omni.isaac.core.utils.viewports import set_camera_view
+from omni.isaac.ros2.scripts.context import ROS2Context
+from omni.isaac.ros2.scripts.articulation import ROS2Articulation
 
-def generate_launch_description():
-    # Path to the Isaac ROS common launch files
-    isaac_ros_common_pkg = FindPackageShare(package='isaac_ros_common').find('isaac_ros_common')
+class RobotROS2BridgeTask(BaseTask):
+    def __init__(self, name):
+        super().__init__(name=name, offset=None)
+        # Path to your robot's USD file
+        self._robot_usd_path = "/path/to/your/robot.usd"
+        # ROS 2 context (must be initialized before other ROS 2 nodes)
+        self.ros2_context = ROS2Context()
 
-    # SLAM node
-    visual_slam_node = Node(
-        package='isaac_ros_visual_slam',
-        executable='isaac_ros_visual_slam',
-        name='visual_slam',
-        parameters=[{
-            'denoise_input_images': False,
-            'rectified_images': True,
-            'enable_slam_visualization': True,
-            # Add other specific parameters here
-        }],
-        remappings=[
-            ('stereo_camera/left/image', '/left_image_topic'),
-            ('stereo_camera/left/camera_info', '/left_info_topic'),
-            ('stereo_camera/right/image', '/right_image_topic'),
-            ('stereo_camera/right/camera_info', '/right_info_topic')
-        ]
-    )
-    
-    # RViz2 for visualization
-    rviz_node = Node(
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
-        arguments=['-d', f'{isaac_ros_common_pkg}/rviz/isaac_ros_visual_slam.rviz']
-    )
+    def set_up_scene(self, scene):
+        super().set_up_scene(scene)
+        # Add the robot to the stage
+        add_reference_to_stage(self._robot_usd_path, "/World/Robot")
+        # Get the articulation wrapper for the robot
+        self._robot_articulation = Articulation("/World/Robot")
+        scene.add(self._robot_articulation)
+        
+        # Initialize the ROS 2 Articulation wrapper
+        # This automatically sets up publishers and subscribers
+        self.ros2_articulation = ROS2Articulation(
+            articulation_path="/World/Robot",
+            node_name="robot_ros2_interface",
+            publish_joint_state=True,
+            subscribe_joint_command=True
+        )
+        
+        self.get_logger().info("ROS 2 bridge for robot initialized.")
+        return
 
-    return LaunchDescription([
-        visual_slam_node,
-        rviz_node
-    ])
+    def post_reset(self):
+        # Set camera view to focus on the robot
+        set_camera_view(eye=[2.0, 2.0, 2.0], target=[0, 0, 0.5])
+
+# In your main script execution:
+# 1. Initialize the simulation world
+# world = World(stage_units_in_meters=1.0)
+# 2. Add the task to the world's task manager
+# task = RobotROS2BridgeTask(name="robot_task")
+# world.add_task(task)
+# 3. Reset the world to run the setup
+# world.reset()
+# 4. Loop the simulation
+# while simulation_app.is_running():
+#     world.step(render=True)
 ```
-
-### How to Run
-
-1.  **Prepare your robot**: In Isaac Sim, ensure you have a robot equipped with a **stereo camera** that is publishing rectified images and camera info to ROS 2 topics.
-2.  **Create the launch file**: Save the launch file in your ROS 2 package. You will need to update the `remappings` to match the actual topic names published by your simulated stereo camera.
-3.  **Run from inside the Isaac ROS container**:
-    ```bash
-    # Launch the SLAM pipeline
-    ros2 launch <your_package_name> slam.launch.py
-    ```
-4.  **Drive the robot**: In Isaac Sim, drive your robot around the environment.
-5.  **Observe in RViz2**: You will see the robot's trajectory, the generated point cloud map, and other debug information being updated in real-time.
+This script demonstrates the "code-first" approach to using Isaac Sim, which is ideal for creating repeatable and automated simulation environments. With this setup, you can now run your ROS 2 nodes from Module 1 and 2, and they will seamlessly control and monitor your robot in Isaac Sim.

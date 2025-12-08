@@ -1,93 +1,124 @@
 ---
-id: simulating-robots
-title: "Week 7: Simulating Robots and Sensors"
-sidebar_label: "Week 7: Robots & Sensors"
-estimated_time: 5
-week: 7
-module: "Digital Twin"
-prerequisites:
-  - "intro-isaac-sim"
-learning_objectives:
-  - "Import a URDF robot model into Isaac Sim"
-  - "Add simulated sensors, like cameras and LiDAR, to the robot"
-  - "Configure the ROS 2 Bridge to publish sensor data"
-  - "Visualize simulated sensor data in RViz2"
+id: week7
+title: 'Module 2: Interacting with the Digital Twin'
+sidebar_label: 'Week 7: ROS 2 Interaction'
 ---
 
-# Week 7: Simulating Robots and Sensors
+## Week 7: Interacting with the Digital Twin via ROS 2
 
-Once you are familiar with the Isaac Sim environment, you can start bringing in your own robots and sensors. This week, we will import the URDF robot we created and add simulated sensors to it, bridging the gap between our robot model and a functioning digital twin.
+Last week, we introduced the concept of a digital twin. This week, we'll dive into the practical aspects of communicating with our digital twin in Isaac Sim using ROS 2. Isaac Sim comes with a powerful set of ROS 2 bridge extensions that make this communication seamless.
 
-## Importing a URDF
+### The ROS 2 Bridge in Isaac Sim
 
-Isaac Sim has a built-in URDF Importer tool. This tool converts your URDF or XACRO file into a USD asset that can be used in the simulation. The importer will automatically handle the links, joints, and visual meshes. It also provides options for fixing joint articulation and improving physical properties.
+The "ROS 2 Bridge" is an extension within Isaac Sim that connects the simulation environment to the ROS 2 network. It can:
+*   **Publish simulation data to ROS 2 topics:** This includes sensor data (like camera images, LiDAR scans, and IMU readings), the state of the robot (joint states), and simulation clock.
+*   **Subscribe to ROS 2 topics to control the simulation:** This allows us to send commands from our ROS 2 nodes to control robot joints, apply forces, and change the environment.
 
-## Adding a Camera
+This means that from the perspective of our ROS 2 code, there is no difference between interacting with the simulated robot and a physical one. We just publish and subscribe to the same topics.
 
-You can add a variety of sensors to your robot directly within the Isaac Sim UI or through Python scripting. A camera is one of the most common sensors. Once a camera is created and attached to a robot link, you can enable its ROS 2 publisher to stream the camera feed to a ROS 2 topic.
+### Example: Reading Sensor Data from the Digital Twin
 
-## Code Example: Spawning a Robot and a Camera
+Let's imagine our digital twin has a camera attached to it. We can configure Isaac Sim to publish the images from this camera to a ROS 2 topic.
 
-This script demonstrates how to spawn a robot from a URDF and attach a camera sensor that publishes to ROS 2.
+#### In Isaac Sim:
+1.  Add a camera to the robot model in the Isaac Sim scene.
+2.  Add the "ROS 2 Camera Helper" graph node to the camera's action graph.
+3.  Configure the node to publish the camera data to a topic, for example, `/robot/camera/image_raw`.
+
+#### In ROS 2 (Python Node):
+We can then write a simple subscriber node to receive and process these images. This example uses `cv_bridge` to convert the ROS 2 image message to an OpenCV image, which is a common practice.
 
 ```python
-# spawn_robot_with_camera.py
-import omni
-from omni.isaac.core import World
-from omni.isaac.core.robots import Robot
-from omni.isaac.core.sensors import Camera
-from omni.isaac.core.utils.nucleus import get_assets_root_path
+# image_subscriber.py
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+import cv2
 
-# Assumes the URDF has been imported into a USD file on the Nucleus server
-# For example: "omniverse://localhost/Projects/my_robot.usd"
-assets_root_path = get_assets_root_path()
-ROBOT_USD_PATH = assets_root_path + "/Isaac/Robots/Jetbot/jetbot.usd"
+class ImageSubscriber(Node):
+    def __init__(self):
+        super().__init__('image_subscriber')
+        self.subscription = self.create_subscription(
+            Image,
+            '/robot/camera/image_raw',
+            self.listener_callback,
+            10)
+        self.subscription  # prevent unused variable warning
+        self.bridge = CvBridge()
+        self.get_logger().info("Image subscriber node started and subscribing to '/robot/camera/image_raw'")
 
+    def listener_callback(self, data):
+        self.get_logger().info('Receiving video frame')
+        # Convert ROS Image message to OpenCV image
+        current_frame = self.bridge.imgmsg_to_cv2(data)
+        
+        # In a real application, you would perform image processing here.
+        # For this example, we'll just display the image.
+        cv2.imshow("Camera Feed", current_frame)
+        cv2.waitKey(1)
 
-world = World()
-world.scene.add_default_ground_plane()
+def main(args=None):
+    rclpy.init(args=args)
+    image_subscriber = ImageSubscriber()
+    rclpy.spin(image_subscriber)
+    image_subscriber.destroy_node()
+    rclpy.shutdown()
+    cv2.destroyAllWindows()
 
-# Add the robot to the stage
-robot = world.scene.add(
-    Robot(
-        prim_path="/world/my_robot",
-        name="my_robot",
-        usd_path=ROBOT_USD_PATH,
-        position=[0, 0, 0.1]
-    )
-)
-
-# Add a camera to the robot's chassis link
-camera = world.scene.add(
-    Camera(
-        prim_path="/world/my_robot/chassis_link/camera",
-        name="my_camera",
-        position=[0.2, 0, 0.5], # Position relative to the chassis link
-        frequency=30,
-        resolution=(640, 480),
-    )
-)
-
-# Enable ROS 2 bridge to publish camera data
-# This assumes the ROS 2 bridge extension is enabled
-camera.add_ros_camera_bridge("image_raw")
-
-
-world.reset()
-while True:
-    world.step(render=True)
+if __name__ == '__main__':
+    main()
 ```
+To run this, you'll need `opencv-python` and `cv_bridge`. You can typically install OpenCV with `pip install opencv-python`. `cv_bridge` is a standard ROS package.
 
-### How to Run
+### Example: Sending Commands to the Digital Twin
 
-1.  First, use the **URDF Importer** in Isaac Sim (`Window` -> `Importers` -> `URDF Importer`) to convert your robot's XACRO/URDF file into a USD file. Save this file to your local Nucleus server. Update the `ROBOT_USD_PATH` in the script to point to your new file.
-2.  Make sure the `omni.isaac.ros2_bridge` extension is enabled in Isaac Sim (`Window` -> `Extensions`).
-3.  Run the script from the Script Editor.
-4.  In a ROS 2 terminal, you can now see the camera data:
-    ```bash
-    # See the new topic
-    ros2 topic list
-    
-    # View the camera feed
-    ros2 run image_view image_view --ros-args -r /image_raw:=/world/my_robot/chassis_link/camera/image_raw
-    ```
+The communication flows both ways. We can also send commands to our digital twin. A common task is to control the joints of a robot arm.
+
+#### In Isaac Sim:
+1.  Ensure your robot's joints are correctly configured.
+2.  Add a "ROS 2 Joint State" subscriber node to the action graph. This node will listen for `sensor_msgs/msg/JointState` messages.
+3.  This node will drive the robot's joints based on the positions received in the messages.
+
+#### In ROS 2 (Python Node):
+We can write a publisher node that sends joint commands. This example sends a command to move a "shoulder_joint" to a specific position.
+
+```python
+# joint_commander.py
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import JointState
+
+class JointCommander(Node):
+    def __init__(self):
+        super().__init__('joint_commander')
+        self.publisher_ = self.create_publisher(JointState, '/joint_command', 10)
+        self.timer = self.create_timer(1.0, self.timer_callback)
+        self.target_position = 0.785  # 45 degrees in radians
+
+    def timer_callback(self):
+        msg = JointState()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.name = ['shoulder_joint']
+        msg.position = [self.target_position]
+        
+        self.publisher_.publish(msg)
+        self.get_logger().info(f'Publishing joint command for shoulder_joint: {self.target_position}')
+        
+        # Toggle position for demonstration
+        if self.target_position > 0:
+            self.target_position = -0.785
+        else:
+            self.target_position = 0.785
+
+def main(args=None):
+    rclpy.init(args=args)
+    joint_commander = JointCommander()
+    rclpy.spin(joint_commander)
+    joint_commander.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+```
+When this node is running, the `shoulder_joint` of the robot in Isaac Sim will move back and forth between 45 and -45 degrees. This demonstrates direct control of the digital twin from our external ROS 2 code.

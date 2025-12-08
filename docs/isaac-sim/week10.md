@@ -1,102 +1,112 @@
 ---
-id: isaac-ros-detection
-title: "Week 10: Object Detection with Isaac ROS"
-sidebar_label: "Week 10: Object Detection"
-estimated_time: 5
-week: 10
-module: "NVIDIA Isaac"
-prerequisites:
-  - "intro-isaac-ros"
-learning_objectives:
-  - "Understand the pipeline for deep learning inference in ROS 2"
-  - "Use the Isaac ROS package for object detection (e.g., with YOLOv8)"
-  - "Connect a simulated camera to the detection node"
-  - "Visualize the detected object bounding boxes in RViz2"
+id: week10
+title: 'Module 3: Synthetic Data Generation'
+sidebar_label: 'Week 10: Synthetic Data'
 ---
 
-# Week 10: Object Detection with Isaac ROS
+## Week 10: Generating Synthetic Data for Perception
 
-Object detection is a core perception task in robotics, allowing a robot to identify and locate objects in its environment. **Isaac ROS** provides optimized packages that leverage NVIDIA's TensorRT to perform high-performance deep learning inference on camera streams.
+One of the most powerful features of Isaac Sim is its ability to generate large, high-quality, and automatically labeled datasets for training perception models. In robotics, collecting and labeling real-world data is often expensive, time-consuming, and sometimes dangerous. Synthetic data provides a solution to bootstrap and augment real-world datasets.
 
-## The Inference Pipeline
+### What is Synthetic Data?
 
-A typical deep learning pipeline in Isaac ROS involves several nodes working together:
-1.  **Camera Node**: Publishes raw image data (from a real or simulated camera).
-2.  **Image Format Converter Node**: Converts the image into a format suitable for the neural network.
-3.  **TensorRT Node**: Performs the actual inference using a model that has been optimized with TensorRT.
-4.  **Parser Node**: Interprets the raw output from the neural network and converts it into standard ROS 2 messages, such as `vision_msgs/Detection2DArray`.
-5.  **Visualization Node**: A helper node to draw the bounding boxes onto an image for easy visualization.
+Synthetic data is data that is generated artificially rather than being collected from the real world. In the context of Isaac Sim, this typically refers to:
+*   **Photorealistic Images:** Rendered images from cameras within the simulation.
+*   **Labels and Annotations:** Pixel-perfect annotations that are generated automatically alongside the images. These can include:
+    *   **Bounding Boxes (2D and 3D):** Boxes drawn around objects of interest.
+    *   **Semantic Segmentation:** A label for every pixel in the image, indicating what type of object it belongs to (e.g., "robot," "table," "floor").
+    *   **Instance Segmentation:** Similar to semantic segmentation, but distinguishes between different instances of the same object type.
+    *   **Depth Images:** An image where each pixel's value represents the distance from the camera to that point in the scene.
 
-## Code Example: Launching Object Detection
+Because this data is generated from the simulation ground truth, the labels are perfectly accurate and require no manual effort.
 
-This launch file creates a pipeline for running YOLOv8-based object detection on a camera feed.
+### Domain Randomization
+
+A key challenge when using synthetic data is the "domain gap" - the difference between the simulated and real worlds. A model trained purely on non-randomized synthetic data may not perform well on real-world images. To overcome this, we use **Domain Randomization**.
+
+Domain Randomization involves randomly changing aspects of the simulation environment during data generation. This forces the model to learn the essential features of the objects it's trying to detect, rather than memorizing the specific details of the simulated environment.
+
+In Isaac Sim, you can randomize:
+*   **Textures and Materials:** The appearance of objects, walls, and floors.
+*   **Lighting:** The position, orientation, color, and intensity of lights.
+*   **Object Pose:** The position and orientation of objects in the scene.
+*   **Camera Pose:** The position and orientation of the camera.
+
+By training on a dataset with wide domain randomization, the real world can appear to the model as just another variation of the simulation.
+
+### The Replicator Workflow in Isaac Sim
+
+Isaac Sim includes a powerful tool called the **Replicator** for setting up and running synthetic data generation pipelines. The Replicator works as a graph, much like the Action Graph, allowing you to define the randomization and data output process.
+
+Here is a conceptual Python script using the Replicator API to generate a dataset of images with bounding box labels:
 
 ```python
-# object_detection.launch.py
-from launch import LaunchDescription
-from launch_ros.actions import ComposableNodeContainer
-from launch_ros.descriptions import ComposableNode
+import omni.replicator.core as rep
 
-def generate_launch_description():
-    
-    # The image source can be a simulated camera or a real one
-    image_source_topic = '/camera/image_raw'
+# Define the paths to your 3D models (USD files)
+# These could be objects you want to learn to detect
+OBJECT_ASSET_PATHS = ["/path/to/object1.usd", "/path/to/object2.usd"]
 
-    # YOLOv8 model has been converted to an engine file for TensorRT
-    model_path = '/path/to/your/yolov8.engine'
+# --- Define Randomizers ---
 
-    container = ComposableNodeContainer(
-        name='detection_container',
-        namespace='',
-        package='rclcpp_components',
-        executable='component_container',
-        composable_node_descriptions=[
-            # 1. Inference Node
-            ComposableNode(
-                package='isaac_ros_tensor_rt',
-                plugin='nvidia::isaac_ros::dnn_inference::TensorRTNode',
-                name='tensor_rt_node',
-                parameters=[{'model_file_path': model_path}],
-                remappings=[('tensor_pub', 'tensor_pub'), 
-                            ('tensor_sub', 'tensor_sub')]
-            ),
-            # 2. YOLOv8 Decoder Node
-            ComposableNode(
-                package='isaac_ros_yolov8',
-                plugin='nvidia::isaac_ros::yolov8::YoloV8DecoderNode',
-                name='yolov8_decoder_node',
-            ),
-            # 3. Image Preprocessor
-            ComposableNode(
-                package='isaac_ros_image_proc',
-                plugin='nvidia::isaac_ros::image_proc::ResizeNode',
-                name='resize_node',
-                parameters=[{'output_width': 640, 'output_height': 640}],
-                remappings=[('image_in', image_source_topic),
-                            ('image_out', 'resized_image')]
+# 1. Randomizer for creating the objects themselves
+def create_random_objects():
+    # Create a layer to hold the objects
+    with rep.layer("objects"):
+        # For each object, add it to the scene at a random pose
+        rep.create.from_usd(
+            rep.distribution.choice(OBJECT_ASSET_PATHS),
+            count=5 # Create 5 objects per frame
+        )
+    return rep.get.prims(from_layer="objects")
+
+# 2. Randomizer for the material/look of the objects
+def randomize_materials(prims):
+    # For the given prims, apply a random material
+    with prims:
+        rep.modify.material(
+            rep.distribution.choice(
+                [rep.get.material("/path/to/material1.mdl"), rep.get.material("/path/to/material2.mdl")]
             )
-        ],
-        output='screen'
-    )
+        )
+    return prims
+
+# 3. Randomizer for the pose of the objects
+def randomize_pose(prims):
+    with prims:
+        rep.modify.pose(
+            position=rep.distribution.uniform((-100, 0, 0), (100, 0, 100)), # Random x and z position
+            rotation=rep.distribution.uniform((0, -180, 0), (0, 180, 0)) # Random yaw
+        )
+    return prims
+
+# --- Register Randomizers with the Replicator Trigger ---
+
+# `rep.trigger.on_frame()` causes this graph to be re-evaluated every frame
+with rep.trigger.on_frame():
+    # Chain the randomizers together
+    prims = create_random_objects()
+    prims = randomize_materials(prims)
+    prims = randomize_pose(prims)
     
-    return LaunchDescription([container])
+# --- Define the Output (Annotator) ---
+
+# 1. Create a camera
+camera = rep.create.camera()
+
+# 2. Create an annotator to generate the data
+annotator = rep.AnnotatorRegistry.get_annotator("bounding_box_2d_tight")
+annotator.attach([camera])
+
+# 3. Tell the Replicator what to output
+# The output will be saved in a folder structure specified by the writer
+writer = rep.WriterRegistry.get("BasicWriter")
+writer.initialize(output_dir="_output", rgb=True, bounding_box_2d_tight=True)
+writer.attach([camera])
+
+# To run this, you would typically use the `omni.replicator.core.orchestrator.run()` function
 ```
 
-### How to Run
+This script sets up a pipeline that, on every frame, creates 5 random objects, assigns them random materials, and places them at random positions. It then captures an image from a camera and saves both the image and the corresponding 2D bounding box data to a directory. This output can then be directly used to train a model with a framework like PyTorch or TensorFlow.
 
-1.  **Get a Model**: You need a YOLOv8 model that has been converted to a TensorRT `.engine` file. The Isaac ROS documentation provides instructions on how to do this.
-2.  **Create the launch file**: Save the file in your package, updating the `model_path` and `image_source_topic` to match your setup.
-3.  **Run the camera**: Make sure your simulated or real camera is publishing images.
-4.  **Run from inside the Isaac ROS container**:
-    ```bash
-    # Launch the detection pipeline
-    ros2 launch <your_package_name> object_detection.launch.py
-    ```
-5.  **Visualize**: You can now visualize the output:
-    ```bash
-    # View the detection messages
-    ros2 topic echo /visualizer/my_image
-    
-    # Or use an image view to see the bounding boxes
-    ros2 run image_view image_view --ros-args -r image:=/visualizer/my_image
-    ```
+Synthetic data generation is a transformative technology for robotics, and Isaac Sim provides a state-of-the-art toolset to leverage it.

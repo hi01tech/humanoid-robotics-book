@@ -1,98 +1,123 @@
 ---
-id: ros2-control-isaac
-title: "Controlling Robots with ros2_control"
-sidebar_label: "ros2_control in Isaac Sim"
-estimated_time: 5
-week: 7 # Part of week 7
-module: "Digital Twin"
-prerequisites:
-  - "simulating-robots"
-learning_objectives:
-  - "Understand the architecture of ros2_control"
-  - "Configure a robot in Isaac Sim to be controlled by ros2_control"
-  - "Use a standard ROS 2 controller to drive a simulated robot"
-  - "Send velocity commands to the robot from the ROS 2 CLI"
+id: ros2-control
+title: 'Module 2: Using ros2_control'
+sidebar_label: 'ros2_control'
 ---
 
-# Controlling Robots with `ros2_control`
+## Real-time Control with `ros2_control`
 
-`ros2_control` is the standard framework in ROS 2 for real-time control of robots. It provides a generic interface between your high-level ROS nodes and your robot's hardware (or, in our case, simulated hardware). This allows you to write controller-agnostic code that can be reused on different robots.
+While publishing joint commands directly to Isaac Sim works for simple cases, a more robust and standard approach for robot control in ROS 2 is using the `ros2_control` framework. `ros2_control` is a set of packages that provides a standardized way to interface with robot hardware. By using it with our digital twin, we create a seamless transition from simulation to a physical robot.
 
-## `ros2_control` in Isaac Sim
+### Why use `ros2_control`?
 
-Isaac Sim has native support for `ros2_control`, which makes it an excellent platform for testing controllers before deploying them to a physical robot. By enabling the `ros2_control` bridge, Isaac Sim will automatically create the necessary interfaces to connect to your robot's simulated joints.
+The `ros2_control` framework provides several key advantages:
+*   **Standardization:** It provides a common interface for controllers (like joint trajectory controllers) and hardware (or simulation) backends.
+*   **Real-time Safety:** It is designed with real-time performance and safety in mind, which is critical for physical robots.
+*   **Controller Management:** It includes a controller manager that can load, unload, start, and stop different controllers at runtime without restarting the robot.
+*   **Abstraction:** Your high-level code (e.g., a navigation stack) doesn't need to know the details of how the robot's joints are controlled. It just sends a standard goal (like a trajectory) to a `ros2_control` controller.
 
-## The Control Loop
+### The `ros2_control` Architecture
 
-1.  **Isaac Sim**: Simulates the robot's joints and publishes their state (position, velocity).
-2.  **`ros2_control`**: The `ros2_control` framework reads the joint states.
-3.  **Controller Manager**: A `ros2_control` tool that loads and runs controllers.
-4.  **Controller**: A plugin (e.g., `diff_drive_controller`) that subscribes to a command topic (like `/cmd_vel`) and calculates the required joint efforts or velocities.
-5.  **`ros2_control`**: The framework sends these new commands back to the hardware interface.
-6.  **Isaac Sim**: The hardware interface in Isaac Sim receives the commands and applies them to the simulated joints.
+The main components of `ros2_control` are:
+1.  **Hardware Interface:** This is the component that communicates directly with the robot's hardware (or, in our case, the simulator). It reads sensor data (like joint positions) and writes commands (like joint velocities). For Isaac Sim, there are specialized hardware interface plugins.
+2.  **Controller Manager:** A node that manages the lifecycle of controllers.
+3.  **Controllers:** These are the algorithms that compute the commands to be sent to the hardware. Common controllers include:
+    *   `joint_state_broadcaster`: Reads the current state of the joints from the hardware interface and publishes them as `sensor_msgs/msg/JointState`.
+    *   `joint_trajectory_controller`: Accepts a trajectory of joint positions and executes it on the robot.
+    *   `diff_drive_controller`: For controlling differential drive mobile robots.
 
-## Code Example: `ros2_control` Configuration
+### `ros2_control` with Isaac Sim
 
-Configuring `ros2_control` is primarily done through YAML files, not Python scripts. You'll need to create a `controllers.yaml` file to define the controllers and their parameters.
+NVIDIA provides a `ros2_control` hardware interface for Isaac Sim. This allows `ros2_control` to treat the simulated robot in Isaac Sim as its hardware backend.
 
-```yaml
-# my_robot_controllers.yaml
-controller_manager:
-  ros__parameters:
-    update_rate: 100 # Hz
+Here is the typical workflow:
+1.  **URDF Configuration:** Your robot's URDF is updated to include special `<ros2_control>` tags. These tags define the available command interfaces (e.g., `position`, `velocity`) and state interfaces for each joint.
 
-    diff_drive_controller:
-      type: "diff_drive_controller/DiffDriveController"
-
-    joint_state_broadcaster:
-      type: "joint_state_broadcaster/JointStateBroadcaster"
-
-diff_drive_controller:
-  ros__parameters:
-    left_wheel_names: ["base_to_left_wheel"]
-    right_wheel_names: ["base_to_right_wheel"]
-    wheel_separation: 0.4 # Corresponds to base_width
-    wheel_radius: 0.05 # From our URDF
-    publish_rate: 50.0
-
-```
-
-### How to Run
-
-1.  **Create the YAML file**: Save the configuration above in your ROS 2 package (e.g., in a `config` directory).
-2.  **Create a launch file**: Your launch file needs to load the `robot_state_publisher`, start the `controller_manager`, and then "spawn" the controllers defined in your YAML file.
-
-    ```python
-    # control.launch.py
-    # This is a simplified example. A full launch file would be more complex.
-    from launch import LaunchDescription
-    from launch_ros.actions import Node
-    
-    def generate_launch_description():
-        # Node to load and start controllers
-        controller_manager = Node(
-            package="controller_manager",
-            executable="ros2_control_node",
-            parameters=["path/to/your/robot_description.urdf", "path/to/your/controllers.yaml"],
-            output="screen",
-        )
-
-        # Node to spawn the differential drive controller
-        spawn_diff_drive_controller = Node(
-            package="controller_manager",
-            executable="spawner",
-            arguments=["diff_drive_controller"],
-            output="screen",
-        )
-        # ... spawn other controllers like joint_state_broadcaster
-
-        return LaunchDescription([controller_manager, spawn_diff_drive_controller])
+    ```xml
+    <ros2_control name="IsaacSimSystem" type="system">
+      <hardware>
+        <plugin>isaac_sim_ros2_control/IsaacSimROS2ControlHardware</plugin>
+        <param name="robot_description_topic">/robot_description</param>
+      </hardware>
+      <joint name="shoulder_joint">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+    </ros2_control>
     ```
-3.  **Enable `ros2_control` in Isaac Sim**: In the properties for your robot's articulation root, enable the `ROS 2 Control` bridge.
-4.  **Run the system**:
-    -   Start your simulation in Isaac Sim.
-    -   Run your launch file: `ros2 launch <your_package_name> control.launch.py`
-    -   You can now send commands to drive the robot!
-        ```bash
-        ros2 topic pub /diff_drive_controller/cmd_vel_unstamped geometry_msgs/msg/Twist "{linear: {x: 0.5}, angular: {z: 0.2}}"
-        ```
+
+2.  **Controller Configuration:** You create a YAML file to configure the controllers you want to use.
+
+    ```yaml
+    controller_manager:
+      ros__parameters:
+        update_rate: 100
+        use_sim_time: true
+
+        joint_state_broadcaster:
+          type: joint_state_broadcaster/JointStateBroadcaster
+
+        joint_trajectory_controller:
+          type: joint_trajectory_controller/JointTrajectoryController
+
+    joint_trajectory_controller:
+      ros__parameters:
+        joints:
+          - shoulder_joint
+        command_interfaces:
+          - position
+        state_interfaces:
+          - position
+          - velocity
+    ```
+
+3.  **Launch:** A launch file is used to:
+    *   Load the robot description (URDF).
+    *   Start the `ros2_control` controller manager (`ros2_control_node`).
+    *   Load and start the controllers defined in the YAML file.
+
+### Sending a Goal to a Controller
+
+With `ros2_control` set up, you no longer publish low-level joint commands. Instead, you send a high-level goal to the appropriate controller. For the `joint_trajectory_controller`, this is an "action" of type `control_msgs/action/FollowJointTrajectory`.
+
+Here is a simplified Python example of sending a trajectory goal to move the `shoulder_joint`.
+
+```python
+# trajectory_goal_sender.py
+import rclpy
+from rclpy.action import ActionClient
+from rclpy.node import Node
+from control_msgs.action import FollowJointTrajectory
+from trajectory_msgs.msg import JointTrajectoryPoint
+
+class TrajectoryClient(Node):
+    def __init__(self):
+        super().__init__('trajectory_client')
+        self._action_client = ActionClient(self, FollowJointTrajectory, '/joint_trajectory_controller/follow_joint_trajectory')
+
+    def send_goal(self):
+        goal_msg = FollowJointTrajectory.Goal()
+        goal_msg.trajectory.joint_names = ['shoulder_joint']
+        
+        point = JointTrajectoryPoint()
+        point.positions = [0.5] # Target position in radians
+        point.time_from_start.sec = 2
+        goal_msg.trajectory.points.append(point)
+
+        self.get_logger().info('Sending goal...')
+        self._action_client.wait_for_server()
+        self._send_goal_future = self._action_client.send_goal_async(goal_msg)
+
+def main(args=None):
+    rclpy.init(args=args)
+    action_client = TrajectoryClient()
+    action_client.send_goal()
+    rclpy.spin(action_client) # Keep node alive to handle action feedback/result
+    action_client.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+```
+This approach is much more powerful. You can specify a sequence of points with velocities and accelerations, and the controller will handle the smooth execution of the trajectory. This is how complex arm movements are orchestrated in ROS 2.

@@ -1,94 +1,104 @@
 ---
-id: ros2-launch-params
-title: "Week 5: Launch Files & Parameters"
-sidebar_label: "Week 5: Launch & Params"
-estimated_time: 3
-week: 5
-module: "ROS 2"
-prerequisites:
-  - "ros2-core-concepts"
-learning_objectives:
-  - "Understand the purpose of ROS 2 launch files"
-  - "Write a Python-based launch file to start multiple nodes"
-  - "Use parameters to make nodes configurable"
-  - "Set and read a parameter from a launch file"
+id: week5
+title: 'Module 1: ROS 2 Services & Actions'
+sidebar_label: 'Week 5: Services & Actions'
 ---
 
-# Week 5: Launch Files & Parameters
+## Week 5: ROS 2 Services and Actions
 
-As your robotics projects grow, manually running each node in a separate terminal becomes tedious. ROS 2 **Launch Files** solve this by allowing you to define and run a complex system of nodes with a single command. **Parameters** add another layer of flexibility, letting you configure your nodes externally without changing their code.
+This week, we expand on our ROS 2 knowledge by exploring two additional communication patterns: Services and Actions. These are essential for request/response and long-running tasks in robotics.
 
-## Python Launch Files
+### ROS 2 Services
 
-While you can use XML or YAML, Python launch files are the most powerful and flexible. They allow you to use programming logic to define your system startup.
+Services are used for synchronous request/response communication. A "service client" sends a request to a "service server," which processes the request and sends back a response. This is useful for tasks that should be completed quickly and will always result in a response. For example, a service could be used to query the current position of a robot's arm.
 
-A launch file typically includes:
--   A `generate_launch_description()` function.
--   A list of `Node` actions to execute.
+Let's create a simple service that adds two integers.
 
-## Parameters
+#### Service Definition (`.srv` file)
+First, we need to define the service interface in a `.srv` file. Let's call it `AddTwoInts.srv`.
 
-Parameters are values (integers, strings, booleans, etc.) associated with a node. You can set them from a launch file, a YAML file, or the command line. Inside your node, you can declare parameters and retrieve their values.
+```
+int64 a
+int64 b
+---
+int64 sum
+```
+The part above the `---` is the request, and the part below is the response.
 
-## Code Examples
+#### Service Server Node
 
-### 1. Parameter Node
-
-This node declares a parameter `my_parameter` and prints its value.
+Here is the Python code for the service server.
 
 ```python
-# param_node.py
+# add_two_ints_server.py
+from example_interfaces.srv import AddTwoInts
 import rclpy
 from rclpy.node import Node
 
-class ParamNode(Node):
+class MinimalService(Node):
     def __init__(self):
-        super().__init__('param_node')
-        # Declare the parameter with a default value
-        self.declare_parameter('my_parameter', 'world')
-        
-        # Create a timer to read and print the parameter value
-        self.timer = self.create_timer(1.0, self.timer_callback)
+        super().__init__('minimal_service')
+        self.srv = self.create_service(AddTwoInts, 'add_two_ints', self.add_two_ints_callback)
 
-    def timer_callback(self):
-        my_param = self.get_parameter('my_parameter').get_parameter_value().string_value
-        self.get_logger().info(f'Hello, {my_param}!')
+    def add_two_ints_callback(self, request, response):
+        response.sum = request.a + request.b
+        self.get_logger().info(f'Incoming request\na: {request.a} b: {request.b}')
+        self.get_logger().info(f'Sending back response: [{response.sum}]')
+        return response
 
 def main(args=None):
     rclpy.init(args=args)
-    node = ParamNode()
-    rclpy.spin(node)
-    node.destroy_node()
+    minimal_service = MinimalService()
+    rclpy.spin(minimal_service)
+    minimal_service.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
 ```
 
-### 2. Launch File
+#### Service Client Node
 
-This launch file starts the `param_node` and sets `my_parameter` to "Earth".
+Here is the Python code for the service client that calls the server.
 
 ```python
-# my_launch.py
-from launch import LaunchDescription
-from launch_ros.actions import Node
+# add_two_ints_client.py
+from example_interfaces.srv import AddTwoInts
+import rclpy
+from rclpy.node import Node
 
-def generate_launch_description():
-    return LaunchDescription([
-        Node(
-            package='<your_package_name>',
-            executable='param_node',
-            name='my_param_node',
-            output='screen',
-            parameters=[{'my_parameter': 'Earth'}]
-        )
-    ])
+class MinimalClientAsync(Node):
+    def __init__(self):
+        super().__init__('minimal_client_async')
+        self.cli = self.create_client(AddTwoInts, 'add_two_ints')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.req = AddTwoInts.Request()
+
+    def send_request(self, a, b):
+        self.req.a = a
+        self.req.b = b
+        self.future = self.cli.call_async(self.req)
+        rclpy.spin_until_future_complete(self, self.future)
+        return self.future.result()
+
+def main(args=None):
+    rclpy.init(args=args)
+    minimal_client = MinimalClientAsync()
+    response = minimal_client.send_request(5, 10)
+    minimal_client.get_logger().info(
+        f'Result of add_two_ints: for 5 + 10 = {response.sum}')
+    minimal_client.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
 ```
 
-### How to Run
+### ROS 2 Actions
 
-1.  Save both files in your ROS 2 package (the launch file in a `launch` directory).
-2.  Add the launch file installation to your `setup.py`.
-3.  Build your package with `colcon build`.
-4.  Run the launch file: `ros2 launch <your_package_name> my_launch.py`. You should see the message "Hello, Earth!" printed every second.
+Actions are used for long-running tasks that provide feedback during execution. Think of navigating a robot to a goal position. This task might take a while, and you'd want to receive updates on its progress. Actions consist of a goal, feedback, and a result.
+
+An "action client" sends a goal to an "action server". The server executes the goal, provides periodic feedback to the client, and sends a final result when the task is complete. This is an asynchronous process.
+
+Due to the complexity of a full action example, we will revisit a practical implementation in a later module when we work with navigation. The core concept to remember is that actions are for tasks that take time and where you need to know what's happening during execution.

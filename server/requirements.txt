@@ -6,3 +6,6 @@ qdrant-client
 sqlalchemy
 psycopg2-binary
 asyncpg
+langchain
+sentence-transformers
+unstructured[md]
