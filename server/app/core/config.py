@@ -13,8 +13,8 @@ class Settings(BaseSettings):
     qdrant_api_key: str = os.getenv("QDRANT_API_KEY")
     qdrant_collection_name: str = os.getenv("QDRANT_COLLECTION_NAME", "textbook_rag")
 
-    # OpenAI
-    openai_api_key: str = os.getenv("OPENAI_API_KEY")
+    # Gemini
+    gemini_api_key: str = os.getenv("GEMINI_API_KEY")
 
     class Config:
         case_sensitive = True
