@@ -11,7 +11,7 @@
 ## Phase 3: RAG Backend & Content Integration
 
 - [x] P3.1: Implement **Neon Postgres/Qdrant connection logic**.
-- [ ] P3.2: Create **RAG Indexing Service** to parse, chunk, embed, and load all `docs/` content into Qdrant.
+- [x] P3.2: Create **RAG Indexing Service** to parse, chunk, embed, and load all `docs/` content into Qdrant.
 - [ ] P3.3: Implement **RAG Query Service** in the FastAPI backend for user-facing search.
 - [ ] P3.4: Integrate RAG search results into the Docusaurus frontend.
 
