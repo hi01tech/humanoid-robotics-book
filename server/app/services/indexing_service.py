@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 from langchain_core.documents import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
 from sentence_transformers import SentenceTransformer
 from qdrant_client import models
