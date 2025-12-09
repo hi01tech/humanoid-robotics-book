@@ -1,22 +1,13 @@
 from qdrant_client import QdrantClient
 from app.core.config import settings
 
-def get_qdrant_client():
+def get_qdrant_client() -> QdrantClient:
     """
-    Returns a QdrantClient instance.
+    Creates and returns a synchronous Qdrant client.
     """
+    # Initialize the client with the URL and API Key from settings
     client = QdrantClient(
-        host=settings.qdrant_host, 
-        api_key=settings.qdrant_api_key
+        url=settings.qdrant_url,
+        api_key=settings.qdrant_api_key,
     )
     return client
-
-# You can also initialize the collection here if it doesn't exist
-# client = get_qdrant_client()
-# try:
-#     client.get_collection(collection_name=settings.qdrant_collection_name)
-# except Exception:
-#     client.recreate_collection(
-#         collection_name=settings.qdrant_collection_name,
-#         vectors_config=models.VectorParams(size=768, distance=models.Distance.COSINE),
-#     )

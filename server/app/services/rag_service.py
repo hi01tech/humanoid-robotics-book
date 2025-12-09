@@ -1,17 +1,16 @@
+from anyio import to_thread
 import google.generativeai as genai
 from sentence_transformers import SentenceTransformer
 from app.core.config import settings
 from app.db.vector_store import get_qdrant_client
 from app.models.rag import QueryResponse, SourceDocument
+from qdrant_client.models import SearchRequest
 
 # --- Configuration ---
 EMBEDDING_MODEL_NAME = 'all-MiniLM-L6-v2'
 GEMINI_MODEL_NAME = 'gemini-1.5-flash'
 
 # --- Initialize models ---
-# It's better to load these once and reuse them.
-# In a real production app, you might use a dependency injection system
-# or a class-based service to manage the model lifecycle.
 print("Loading embedding model...")
 embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
 print("Embedding model loaded.")
@@ -40,35 +39,54 @@ def build_prompt(query: str, context: list[dict]) -> str:
     
     Here is the user's question:
     
-    \"{query}\"    
+    \"{query}\"      
     Answer:
     """
     return prompt
 
 async def get_rag_answer(query: str, top_k: int) -> QueryResponse:
-    """
-    Performs the full RAG pipeline:
-    1. Embeds the query.
-    2. Searches Qdrant.
-    3. Generates a response using Gemini.
-    """
     print(f"Received query: {query}")
     
-    # 1. Embed the query
+    # 1. Embed the query (Run in separate thread to prevent blocking)
     print("Embedding user query...")
-    query_embedding = embedding_model.encode(query).tolist()
+    # The result of run_sync is the array, which we then convert to a list.
+    query_embedding_array = await to_thread.run_sync(embedding_model.encode, query)
+    query_embedding = query_embedding_array.tolist()
     
     # 2. Search Qdrant
     print("Searching Qdrant for relevant documents...")
     qdrant_client = get_qdrant_client()
-    search_results = qdrant_client.search(
-        collection_name=settings.qdrant_collection_name,
-        query_vector=query_embedding,
-        limit=top_k,
-        with_payload=True  # Ensure we get the payload
-    )
     
-    # Convert ScoredPoint objects to dictionaries for prompt building
+    # --- DEBUGGING BLOCK ---
+    print(f"DEBUG: Client Type: {type(qdrant_client)}")
+    print(f"DEBUG: Client Dir: {dir(qdrant_client)}")
+    # -----------------------
+
+    # Explicit Search Request
+    search_request = SearchRequest(
+        vector=query_embedding,
+        limit=top_k,
+        with_payload=True
+    )
+
+    try:
+        search_results = qdrant_client.search(
+            collection_name=settings.qdrant_collection_name,
+            query_vector=search_request.vector,
+            limit=search_request.limit,
+            with_payload=search_request.with_payload
+        )
+    except AttributeError:
+        # Fallback for some client versions that prefer .query_points or .retrieve
+        print("DEBUG: .search() failed, attempting fallback...")
+        search_results = qdrant_client.query_points(
+            collection_name=settings.qdrant_collection_name,
+            query=search_request.vector,
+            limit=search_request.limit,
+            with_payload=search_request.with_payload
+        ).points
+
+    # Convert results for prompt
     context_for_prompt = [result.model_dump() for result in search_results]
     
     # 3. Generate response using Gemini
@@ -83,7 +101,7 @@ async def get_rag_answer(query: str, top_k: int) -> QueryResponse:
         print(f"Error calling Gemini API: {e}")
         final_answer = "Error: Could not generate an answer from the language model."
 
-    # Prepare source documents for the final response
+    # Prepare source documents
     sources = [
         SourceDocument(
             source=hit.payload['metadata']['source'],
