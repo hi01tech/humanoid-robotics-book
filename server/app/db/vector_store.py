@@ -1,5 +1,5 @@
 from qdrant_client import QdrantClient
-from app.core.config import settings
+from app.core.config import Settings
 
 def get_qdrant_client() -> QdrantClient:
     """
@@ -7,7 +7,7 @@ def get_qdrant_client() -> QdrantClient:
     """
     # Initialize the client with the URL and API Key from settings
     client = QdrantClient(
-        url=settings.qdrant_url,
-        api_key=settings.qdrant_api_key,
+        url=Settings.qdrant_url,
+        api_key=Settings.qdrant_api_key,
     )
     return client

@@ -1,20 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException
-from app.models.rag import QueryRequest, QueryResponse
-from app.services.rag_service import get_rag_answer
+from fastapi import APIRouter, Depends
+from qdrant_client import QdrantClient
+
+from app.db.vector_store import get_qdrant_client
+from app.models.rag import RagQuery, RagResponse
+from app.services.rag_service import RagService
 
 router = APIRouter()
 
-@router.post("/query", response_model=QueryResponse)
-async def query_rag(request: QueryRequest):
+@router.post("/query", response_model=RagResponse)
+async def query_rag(
+    rag_query: RagQuery,
+    qdrant: QdrantClient = Depends(get_qdrant_client),
+):
     """
-    Accepts a user's question, retrieves relevant context from the vector store,
-    and generates a final answer using a Large Language Model.
+    Accepts a query and returns a RAG-generated response.
     """
-    try:
-        response = await get_rag_answer(request.question, request.top_k)
-        return response
-    except Exception as e:
-        # For a production app, you'd want more specific error handling
-        # and logging.
-        print(f"An error occurred during query processing: {e}")
-        raise HTTPException(status_code=500, detail="Failed to process the RAG query.")
+    service = RagService(qdrant)
+    response = await service.query(rag_query.query, rag_query.top_k)
+    return response

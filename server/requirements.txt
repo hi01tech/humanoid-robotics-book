@@ -6,6 +6,8 @@ qdrant-client
 sqlalchemy
 psycopg2-binary
 asyncpg
+sentence-transformers
+google-generativeai
 langchain
 sentence-transformers
 unstructured[md]

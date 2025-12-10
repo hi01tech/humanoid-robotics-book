@@ -64,6 +64,7 @@ const config = {
             position: 'left',
             label: 'Textbook',
           },
+          {to: '/search', label: 'Search', position: 'left'},
         ],
       },
       footer: {

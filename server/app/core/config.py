@@ -1,5 +1,5 @@
 import os
-from pydantic_settings import BaseSettings
+from pydantic import BaseSettings
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,8 +13,8 @@ class Settings(BaseSettings):
     qdrant_api_key: str = os.getenv("QDRANT_API_KEY")
     qdrant_collection_name: str = os.getenv("QDRANT_COLLECTION_NAME", "textbook_rag")
 
-    # Gemini
-    gemini_api_key: str = os.getenv("GEMINI_API_KEY")
+    # Google AI
+    google_api_key: str = os.getenv("GOOGLE_API_KEY")
 
     class Config:
         case_sensitive = True

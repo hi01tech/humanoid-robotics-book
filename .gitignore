@@ -1,0 +1,13 @@
+# Ignore project environment and secrets
+server/.env
+.env
+
+# Ignore Python virtual environment folders
+venv/
+*.pyc
+__pycache__/
+
+# Ignore Docusaurus artifacts
+.docusaurus/
+build/
+

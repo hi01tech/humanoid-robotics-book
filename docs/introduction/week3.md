@@ -5,13 +5,12 @@ sidebar_label: "Week 3: State Estimation"
 estimated_time: 4
 week: 3
 module: Foundations
-prerequisites:
-  - "foundations-week2"
+prerequisites: ["foundations-week2"]
 learning_objectives:
   - "Define state estimation and its importance in robotics"
   - "Understand the concept of SLAM (Simultaneous Localization and Mapping)"
   - "Explain the core concepts of ROS 2 (nodes, topics, services)"
-  - "Build a simple "Hello, World" program in ROS 2"
+  - 'Build a simple "Hello, World" program in ROS 2'
 ---
 
 # Week 3: State Estimation & Introduction to ROS

@@ -1,0 +1,124 @@
+/* src/pages/search.module.css */
+
+.searchContainer {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--ifm-background-surface-color);
+}
+
+.searchContainer h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.searchContainer p {
+    color: var(--ifm-color-content-secondary);
+    margin-bottom: 2rem;
+}
+
+.searchForm {
+  display: flex;
+  margin-bottom: 2rem;
+}
+
+.searchInput {
+  flex-grow: 1;
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 4px 0 0 4px;
+  background-color: var(--ifm-background-color);
+  color: var(--ifm-font-color-base);
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: var(--ifm-color-primary);
+    box-shadow: 0 0 0 2px var(--ifm-color-primary-lightest);
+}
+
+.searchButton {
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  border: none;
+  background-color: var(--ifm-color-primary);
+  color: white;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.searchButton:hover {
+  background-color: var(--ifm-color-primary-dark);
+}
+
+.searchButton:disabled {
+    background-color: var(--ifm-color-emphasis-300);
+    cursor: not-allowed;
+}
+
+.errorContainer {
+    background-color: var(--ifm-color-danger-contrast-background);
+    color: var(--ifm-color-danger-contrast-foreground);
+    padding: 1rem;
+    border-radius: 4px;
+    margin-top: 1rem;
+}
+
+.resultsContainer {
+  margin-top: 2rem;
+}
+
+.resultsContainer h2 {
+    font-size: 2rem;
+    border-bottom: 1px solid var(--ifm-color-emphasis-300);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.answerText {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    white-space: pre-wrap; /* Preserve whitespace and newlines in the answer */
+    background-color: var(--ifm-background-color);
+    padding: 1rem;
+    border-radius: 4px;
+    border: 1px solid var(--ifm-color-emphasis-200);
+}
+
+
+.resultsContainer h3 {
+    font-size: 1.5rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.sourceList {
+    list-style-type: none;
+    padding: 0;
+}
+
+.sourceItem {
+    border: 1px solid var(--ifm-color-emphasis-200);
+    border-radius: 4px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: var(--ifm-background-surface-color);
+}
+
+.sourceContent {
+    font-style: italic;
+    color: var(--ifm-color-content-secondary);
+    border-left: 3px solid var(--ifm-color-primary-light);
+    padding-left: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.sourceMeta {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--ifm-color-content);
+}
