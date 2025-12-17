@@ -1,9 +1,12 @@
 # Ignore project environment and secrets
 server/.env
 .env
+.env.local
+secrets.json
 
 # Ignore Python virtual environment folders
 venv/
+.venv/
 *.pyc
 __pycache__/
 
@@ -11,3 +14,18 @@ __pycache__/
 .docusaurus/
 build/
 
+
+# --- OS Specific ---
+.DS_Store
+Thumbs.db
+*.swp
+
+# --- IDEs ---
+.vscode/
+.idea/
+*.iml
+*.code-workspace
+
+# --- Logs ---
+*.log
+logs/

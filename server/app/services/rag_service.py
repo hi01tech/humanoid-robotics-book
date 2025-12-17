@@ -2,7 +2,7 @@ from qdrant_client import QdrantClient, models
 from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
 
-from app.core.config import settings
+from server.app.core.config import settings
 
 class RagService:
     def __init__(self, qdrant: QdrantClient):

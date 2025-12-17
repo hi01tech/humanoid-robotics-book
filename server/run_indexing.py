@@ -1,7 +1,7 @@
 import argparse
-from app.services.indexing_service import IndexingService
-from app.core.config import settings
-from app.db.vector_store import get_qdrant_client
+from server.app.services.indexing_service import IndexingService
+from server.app.core.config import settings
+from server.app.db.vector_store import get_qdrant_client
 
 def main():
     """

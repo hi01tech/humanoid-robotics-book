@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends
 from qdrant_client import QdrantClient
-
-from app.db.vector_store import get_qdrant_client
-from app.models.rag import QueryRequest, QueryResponse # Updated import
-from app.services.rag_service import RagService
+from server.app.db.vector_store import get_qdrant_client
+from server.app.models.rag import QueryRequest, QueryResponse # Updated import
+from server.app.services.rag_service import RagService
 
 router = APIRouter()
 
