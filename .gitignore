@@ -12,7 +12,7 @@ __pycache__/
 
 # Ignore Docusaurus artifacts
 .docusaurus/
-build/
+build
 
 
 # --- OS Specific ---
@@ -29,3 +29,16 @@ Thumbs.db
 # --- Logs ---
 *.log
 logs/
+
+
+# Web dependencies
+frontend/node_modules/
+frontend/.docusaurus/
+frontend/build/
+
+# Python dependencies
+**/venv/
+**/.venv/
+**/__pycache__/
+*.py[cod]
+
