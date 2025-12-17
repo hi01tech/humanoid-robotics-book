@@ -2,19 +2,19 @@ from fastapi import APIRouter, Depends
 from qdrant_client import QdrantClient
 
 from app.db.vector_store import get_qdrant_client
-from app.models.rag import RagQuery, RagResponse
+from app.models.rag import QueryRequest, QueryResponse # Updated import
 from app.services.rag_service import RagService
 
 router = APIRouter()
 
-@router.post("/query", response_model=RagResponse)
+@router.post("/query", response_model=QueryResponse) # Updated response_model
 async def query_rag(
-    rag_query: RagQuery,
+    rag_query: QueryRequest, # Updated request model
     qdrant: QdrantClient = Depends(get_qdrant_client),
 ):
     """
-    Accepts a query and returns a RAG-generated response.
+    Accepts a question and returns a RAG-generated response.
     """
     service = RagService(qdrant)
-    response = await service.query(rag_query.query, rag_query.top_k)
+    response = await service.query(rag_query.question, rag_query.top_k) # Accessing rag_query.question
     return response

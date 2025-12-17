@@ -2,14 +2,13 @@ import React, { useState } from 'react';
 import Layout from '@theme/Layout';
 import styles from './search.module.css';
 
-function SearchPage() {
+export default function SearchPage() {
   const [query, setQuery] = useState('');
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
+  const handleSearch = async () => {
     if (!query) return;
 
     setIsLoading(true);
@@ -17,70 +16,67 @@ function SearchPage() {
     setResult(null);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/v1/query', {
+      const response = await fetch('http://127.0.0.1:8000/rag/query', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ question: query }),
+        body: JSON.stringify({ question: query, top_k: 3 }), // Changed 'query' to 'question'
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
       setResult(data);
-    } catch (err) {
-      setError('Failed to fetch search results. Please ensure the backend server is running.');
-      console.error(err);
+    } catch (e) {
+      setError(`Failed to fetch search results: ${e.message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Layout title="Search" description="Search the Humanoid Robotics Textbook">
+    <Layout title="Search" description="Search the textbook content">
       <div className={styles.searchContainer}>
-        <h1>Ask a question</h1>
-        <p>Use the RAG search to ask a question about the content in this textbook.</p>
-        <form onSubmit={handleSearch} className={styles.searchForm}>
+        <h1>Ask a question about the textbook</h1>
+        <div className={styles.inputContainer}>
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="e.g., What is a digital twin?"
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             className={styles.searchInput}
-            disabled={isLoading}
+            placeholder="What is Visual SLAM?"
           />
-          <button type="submit" className={styles.searchButton} disabled={isLoading}>
+          <button
+            onClick={handleSearch}
+            className="button button--primary"
+            disabled={isLoading}
+          >
             {isLoading ? 'Searching...' : 'Search'}
           </button>
-        </form>
+        </div>
 
         {error && <div className={styles.errorContainer}>{error}</div>}
 
         {result && (
           <div className={styles.resultsContainer}>
             <h2>Answer</h2>
-            <p className={styles.answerText}>{result.answer}</p>
+            <p className={styles.answerText}>{result.response}</p>
 
             <h3>Sources</h3>
-            <ul className={styles.sourceList}>
-              {result.sources.map((source, index) => (
-                <li key={index} className={styles.sourceItem}>
-                  <p className={styles.sourceContent}>"{source.content}"</p>
-                  <p className={styles.sourceMeta}>
-                    <strong>Source:</strong> {source.source}
-                  </p>
-                </li>
+            <div className={styles.sourcesContainer}>
+              {result.retrieved_chunks.map((chunk, index) => (
+                <div key={index} className={styles.sourceChunk}>
+                  <p>{chunk}</p>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
       </div>
     </Layout>
   );
 }
-
-export default SearchPage;

@@ -52,10 +52,12 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       navbar: {
-        title: 'Humanoid Robotics',
+        title: 'Physical AI & Humanoid Robotics',
         logo: {
-          alt: 'My Site Logo',
-          src: 'img/logo.svg',
+          alt: 'Logo',
+          src: 'img/logo.png',
+          width: 50,
+          height: 50,
         },
         items: [
           {
@@ -64,13 +66,13 @@ const config = {
             position: 'left',
             label: 'Textbook',
           },
-          {to: '/search', label: 'Search', position: 'left'},
+          {to: '/search', label: 'Search', position: 'right'},
         ],
       },
       footer: {
         style: 'dark',
         links: [],
-        copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} Physical AI & Humanoid Robotics Textbook. Built with Docusaurus.`,
       },
       prism: {
         theme: lightCodeTheme,

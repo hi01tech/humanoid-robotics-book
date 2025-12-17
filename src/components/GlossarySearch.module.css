@@ -1,0 +1,33 @@
+.glossarySearchInput {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: var(--ifm-global-radius);
+}
+
+.glossaryList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.glossaryItem {
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: var(--ifm-global-radius);
+  padding: 1rem 1.5rem;
+  background-color: var(--ifm-background-color);
+  box-shadow: var(--ifm-global-shadow-sm);
+  transition: all 0.2s ease-in-out;
+}
+
+.glossaryItem:hover {
+    border-color: var(--ifm-color-primary);
+    box-shadow: var(--ifm-global-shadow-md);
+}
+
+.glossaryItem h3 {
+  margin-top: 0;
+  color: var(--ifm-color-primary);
+}

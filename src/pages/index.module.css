@@ -1,65 +1,144 @@
 /**
- * CSS files with the .module.css suffix will be treated as CSS modules
- * and scoped locally.
+ * Homepage-specific styles
  */
 
-.heroBanner {
-  padding: 4rem 0;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-  background-color: var(--ifm-color-primary);
-  color: white;
+/* Section 1: Hero Split */
+.heroSplit {
+  height: 88vh;
+  min-height: 500px;
+  display: flex;
+  align-items: center;
+  background-image: linear-gradient(to top,  #64b155,#21924a,#0a3e34, #03201b  ); 
+  color: rgb(247, 244, 244); /* Ensure text is visible on dark background,#27693f */
 }
 
+.heroContainer {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.heroImageContainer {
+  flex: 1 1 40%;
+  height: 100%;
+  max-height: 450px;
+}
+
+.heroImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--ifm-card-border-radius);
+}
+
+.heroTextContainer {
+  flex: 1 1 60%;
+  padding-left: 2rem;
+}
+
+
+/* Section 2: Learning Path */
+.learningPath {
+  padding: 4rem 0;
+  background-image:#c6f0c6,
+}
+
+.cardContainer {
+  margin-bottom: var(--ifm-spacing-lg);
+}
+
+/* 2.1 Grid Alignment: Ensure all cards in a row have equal height */
+.learningPath .row {
+  align-items: stretch;
+}
+
+/* 2.2 Remove Link Styling: Make the link wrapper behave like a block */
+.cardLink {
+  margin: 28px;
+  text-decoration: none;
+  color: inherit;
+  display: block; /* Make the link fill the container */
+  height: 100%;   /* Ensure link takes up full card height */
+  box-shadow: #03201b;
+  
+}
+
+.cardLink:hover {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Style the cards within the learning path */
+.cardLink .card {
+  /* 2.2 Card Sizing: Make cards fill the available space */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  
+  /* 2.3 Outline: Add a thin green border */
+  border: 20px solid #15460b;
+  
+  /* 2.4 Animation: Set up a smooth transition for hover effect */
+  transition: all 0.3s ease;
+}
+
+/* 2.4 Animation: Apply the hover effect */
+.cardLink:hover .card {
+  transform: translateY(-5px);
+  box-shadow: var(--ifm-global-shadow-lw);
+}
+
+/* 1.1 Color Update: Set card title color */
+.cardLink .card .card__header h3 {
+  color: #64b155;
+}
+
+/* 1.1 & 1.2 Sub-heading Style */
+.learningOutcomesHeading {
+  font-weight: 600; /* semi-bold */
+  font-size: 1rem;
+  margin-top: 12px;
+  color: #64b155;
+}
+
+.learningOutcomesList {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin-top: 0.5rem; /* Reduced margin-top for tighter spacing */
+  font-size: 0.9rem;
+}
+
+.learningOutcomesList li {
+    margin-bottom: 0.25rem;
+}
+
+/* Section 3: Roadmap */
+.roadmap {
+  background-color: var(--ifm-color-emphasis-100);
+  padding: 2rem 0;
+}
+
+/* Mobile-First Responsive Adjustments */
 @media screen and (max-width: 996px) {
-  .heroBanner {
-    padding: 2rem;
+  .heroSplit {
+    height: auto;
+    padding: 2rem 0;
+  }
+
+  .heroContainer {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .heroTextContainer {
+    padding-left: 0;
+    margin-top: 2rem;
   }
 }
 
-.buttons {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.features {
-  display: flex;
-  align-items: center;
-  padding: 2rem 0;
-  width: 100%;
-}
-
-.moduleCard {
-  margin-bottom: var(--ifm-spacing-md);
-  padding: 0 var(--ifm-spacing-sm);
-}
-
-.moduleWeeks {
-  font-weight: bold;
-  color: var(--ifm-color-primary);
-}
-
-.learningOutcomes {
-  list-style: disc;
-  padding-left: 20px;
-}
-
-.quickLinksSidebar {
-  padding: 0 var(--ifm-spacing-sm);
-}
-
-.quickLinksList {
-  list-style: none;
-  padding: 0;
-}
-
-.quickLinksList li {
-  margin-bottom: var(--ifm-spacing-sm);
-}
-
-.quickLinksList li a {
-  color: var(--ifm-color-primary);
-  font-weight: bold;
+/* Make grid 1-column on smaller screens */
+@media screen and (max-width: 768px) {
+  .learningPath .col--6 {
+    flex-basis: 100%;
+  }
 }

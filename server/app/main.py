@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.api import rag
 
 app = FastAPI(
@@ -7,7 +8,29 @@ app = FastAPI(
     version="0.1.0",
 )
 
-app.include_router(rag.router, prefix="/api/v1", tags=["RAG"])
+@app.on_event("startup")
+async def startup_event():
+    """A startup event that prints all registered routes."""
+    print("--- Registered Routes ---")
+    for route in app.routes:
+        if hasattr(route, "methods"):
+            print(f'{route.path} {route.methods}')
+    print("-------------------------")
+
+# Set up CORS
+origins = [
+    "http://localhost:3000", # The address of the Docusaurus dev server
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(rag.router, prefix="/rag", tags=["RAG"])
 
 @app.get("/")
 def read_root():

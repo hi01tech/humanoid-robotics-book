@@ -1,13 +1,13 @@
-from qdrant_client import QdrantClient
-from app.core.config import Settings
+from qdrant_client import AsyncQdrantClient
+from app.core.config import settings
 
-def get_qdrant_client() -> QdrantClient:
+def get_qdrant_client() -> AsyncQdrantClient:
     """
     Creates and returns a synchronous Qdrant client.
     """
     # Initialize the client with the URL and API Key from settings
-    client = QdrantClient(
-        url=Settings.qdrant_url,
-        api_key=Settings.qdrant_api_key,
+    client = AsyncQdrantClient(
+        url=settings.qdrant_host,
+        api_key=settings.qdrant_api_key,
     )
     return client

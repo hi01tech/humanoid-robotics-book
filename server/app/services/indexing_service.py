@@ -1,7 +1,7 @@
 import os
 import glob
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.docstore.document import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.documents import Document
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.models import UpdateStatus
@@ -13,7 +13,7 @@ class IndexingService:
         self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
-            chunk_overlap=200,
+            chunk_overlap=300,
             length_function=len,
         )
 

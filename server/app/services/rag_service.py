@@ -13,33 +13,33 @@ class RagService:
         genai.configure(api_key=settings.google_api_key)
         self.generative_model = genai.GenerativeModel('gemini-pro')
 
-    def _build_prompt(self, query: str, context_chunks: list[str]) -> str:
+    def _build_prompt(self, question: str, context_chunks: list[str]) -> str:
         """Builds a grounded prompt for the generative model."""
         
         context = "\n\n".join(context_chunks)
         
         prompt = f"""
-You are a helpful assistant for the 'Physical AI & Humanoid Robotics' textbook.
-Answer the following question based ONLY on the context provided below.
-If the context does not contain the answer, state that you cannot answer the question with the provided context.
+        You are a helpful assistant for the 'Physical AI & Humanoid Robotics' textbook.
+        Answer the following question based ONLY on the context provided below.
+        If the context does not contain the answer, state that you cannot answer the question with the provided context.
 
-CONTEXT:
-{context}
+        CONTEXT:
+        {context}
 
-QUESTION:
-{query}
+        QUESTION:
+        {question}
         """
         return prompt
 
-    async def query(self, query: str, top_k: int) -> dict:
+    async def query(self, question: str, top_k: int) -> dict: # Changed 'query' to 'question'
         """
         Performs the RAG query:
-        1. Embed the query.
+        1. Embed the question.
         2. Search Qdrant for similar vectors/chunks.
         3. Generate a response using a generative model with the retrieved context.
         """
-        # 1. Embed the query
-        query_embedding = self.embedding_model.encode(query).tolist()
+        # 1. Embed the question
+        query_embedding = self.embedding_model.encode(question).tolist()
         
         # 2. Search Qdrant
         search_results = self.qdrant.search(
@@ -49,20 +49,27 @@ QUESTION:
             with_payload=True
         )
         
-        retrieved_chunks = [hit.payload["text"] for hit in search_results]
+        # Format retrieved chunks to match SourceDocument model
+        retrieved_sources = []
+        for hit in search_results:
+            retrieved_sources.append({
+                "source": hit.payload.get("source", "unknown"),
+                "content": hit.payload["text"]
+            })
         
+        context_chunks_for_llm = [source["content"] for source in retrieved_sources]
+
         # 3. Generate response using the LLM
-        prompt = self._build_prompt(query, retrieved_chunks)
+        prompt = self._build_prompt(question, context_chunks_for_llm) # Changed 'query' to 'question'
         
         try:
             llm_response = self.generative_model.generate_content(prompt)
-            generated_response = llm_response.text
+            generated_answer = llm_response.text # Changed 'generated_response' to 'generated_answer'
         except Exception as e:
             print(f"Error during generative model call: {e}")
-            generated_response = "An error occurred while generating the response."
+            generated_answer = "An error occurred while generating the response."
             
         return {
-            "query": query,
-            "retrieved_chunks": retrieved_chunks,
-            "response": generated_response
+            "answer": generated_answer, # Changed 'response' to 'answer'
+            "sources": retrieved_sources # Changed 'retrieved_chunks' to 'sources'
         }

@@ -3,133 +3,132 @@ import clsx from 'clsx';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import styles from './index.module.css'; // Assuming custom CSS for styling
+import styles from './index.module.css';
 
-// Define module data for cards
-const moduleData = [
+// Import the hero image
+import HeroBotImage from '@site/src/img/robot-landing.png';
+
+const learningPathItems = [
+  
   {
-    title: 'Module 1: ROS 2',
-    weeks: 'Weeks 4-5',
-    learningOutcomes: ['Core ROS 2 concepts', 'Launch files', 'Parameters'],
-    link: '/docs/ros2/week4', // Link to the first week of the module
+    title: 'Module 1: ROS 2 Ecosystem',
+    description: 'Master the core concepts of the Robot Operating System for complex applications.',
+    learningOutcomes: [
+      'Navigate ROS 2 communication patterns',
+      'Develop Python-based ROS 2 nodes',
+      'Utilize launch files and parameters',
+    ],
+    link: '/docs/ros2/week4',
   },
   {
-    title: 'Module 2: Digital Twin',
-    weeks: 'Weeks 6-7',
-    learningOutcomes: ['Isaac Sim introduction', 'Robot simulation', 'ros2_control'],
+    title: 'Module 2: Simulation & Digital Twins',
+    description: 'Use NVIDIA Isaac Sim to create photorealistic, physically-accurate digital twins.',
+    learningOutcomes: [
+      'Import robot models into Isaac Sim',
+      'Configure simulated sensors',
+      'Integrate with ros2_control',
+    ],
     link: '/docs/digital-twin/week6',
   },
   {
-    title: 'Module 3: NVIDIA Isaac',
-    weeks: 'Weeks 8-10',
-    learningOutcomes: ['Isaac ROS basics', 'SLAM', 'Object Detection'],
-    link: '/docs/isaac-sim/week8',
+    title: 'Module 3: The AI-Robot Brain (NVIDIA Isaac™)',
+    description: 'Build scalable robotics simulation application and synthetic data generation.',
+    learningOutcomes: [
+      'Master kinematics and dynamics',
+      'Understand real-time control principles',
+      'Implement sensor fusion techniques',
+    ],
+    link: '/docs/isaac-sim/week8  ',
   },
   {
-    title: 'Module 4: VLA',
-    weeks: 'Weeks 11-13',
-    learningOutcomes: ['VLA architectures', 'Policy learning', 'Advanced perception'],
-    link: '/docs/vla/vla-week11', // Corrected link
+    title: 'Module 4: Vision-Language-Action (VLA)',
+    description: 'Implement advanced perception and decision-making with Isaac ROS and VLAs.',
+    learningOutcomes: [
+      'Accelerate perception with Isaac ROS',
+      'Implement SLAM and object detection',
+      'Explore Vision-Language-Action models',
+    ],
+    link: '/docs/vla/vla-week11',
   },
 ];
 
-// Quick Links data
-const quickLinks = [
-  {
-    label: 'Setup Guides',
-    link: '/docs/setup-guides', // Corrected link
-  },
-  {
-    label: 'Assessments',
-    link: '/docs/assessments', 
-  },
-  {
-    label: 'Glossary',
-    link: '/docs/reference/glossary',
-  },
-];
-
-function HomepageHeader() {
-  const {siteConfig} = useDocusaurusContext();
+function HeroSplit() {
   return (
-    <header className={clsx('hero hero--primary', styles.heroBanner)}>
-      <div className="container">
-        <h1 className="hero__title">{siteConfig.title}</h1>
-        <p className="hero__subtitle">{siteConfig.tagline}</p>
+    <header className={clsx('hero', styles.heroSplit)}>
+      <div className={clsx('container', styles.heroContainer)}>
+        {/* Left Column: Image */}
+        <div className={styles.heroImageContainer}>
+          <img
+            src={HeroBotImage}
+            alt="Hero Robot"
+            className={styles.heroImage}
+          />
+        </div>
+
+        {/* Right Column: Text and CTA */}
+        <div className={styles.heroTextContainer}>
+          <h1 className="hero__title">Master Humanoid Robotics</h1>
+          <p className="hero__subtitle">
+            A deep dive into the engineering, AI, and control systems of
+            bipedal machines.
+          </p>
+          <div>
+            <Link
+              className="button button--secondary button--lg " style={{ backgroundColor: '#aada8e' }}
+              to="/docs/intro"
+            >
+              Start Learning
+            </Link>
+          </div>
+        </div>
       </div>
     </header>
   );
 }
 
-function ModuleCard({ title, weeks, learningOutcomes, link }) {
+function LearningPath() {
   return (
-    <div className={clsx('col col--3', styles.moduleCard)}>
-      <div className="card">
-        <div className="card__header">
-          <h3>{title}</h3>
-        </div>
-        <div className="card__body">
-          <p className={styles.moduleWeeks}>{weeks}</p>
-          <ul className={styles.learningOutcomes}>
-            {learningOutcomes.map((outcome, idx) => (
-              <li key={idx}>{outcome}</li>
-            ))}
-          </ul>
-        </div>
-        <div className="card__footer">
-          <Link className="button button--primary button--block" to={link}>
-            Go to Module
-          </Link>
+    <section className={styles.learningPath}>
+      <div className="container">
+        <div className="row">
+          {learningPathItems.map((item, idx) => (
+            <div key={idx} className={clsx('col col--6', styles.cardContainer)}>
+              <Link to={item.link} className={styles.cardLink}>
+                <div className="card">
+                  <div className="card__header">
+                    <h3>{item.title}</h3>
+                  </div>
+                  <div className="card__body">
+                    <p>{item.description}</p>
+                    <h4 className={styles.learningOutcomesHeading}>
+                      Learning Outcomes:
+                    </h4>
+                    <ul className={styles.learningOutcomesList}>
+                      {item.learningOutcomes.map((outcome, outcomeIdx) => (
+                        <li key={outcomeIdx}>{outcome}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </Link>
+            </div>
+          ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 }
-
-function QuickLinksSidebar() {
-  return (
-    <div className={clsx('col col--2', styles.quickLinksSidebar)}>
-      <div className="card">
-        <div className="card__header">
-          <h3>Quick Links</h3>
-        </div>
-        <div className="card__body">
-          <ul className={styles.quickLinksList}>
-            {quickLinks.map((item, idx) => (
-              <li key={idx}>
-                <Link to={item.link}>{item.label}</Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 
 export default function Home() {
-  const {siteConfig} = useDocusaurusContext();
+  const { siteConfig } = useDocusaurusContext();
   return (
     <Layout
-      title={`Hello from ${siteConfig.title}`}
-      description="Description will go into a meta tag in <head />">
-      <HomepageHeader />
+      title={`Home`}
+      description="A deep dive into the engineering, AI, and control systems of bipedal machines."
+    >
+      <HeroSplit />
       <main>
-        <section className={styles.features}>
-          <div className="container">
-            <div className="row">
-              <div className={clsx('col col--10')}>
-                <div className="row">
-                  {moduleData.map((props, idx) => (
-                    <ModuleCard key={idx} {...props} />
-                  ))}
-                </div>
-              </div>
-              <QuickLinksSidebar />
-            </div>
-          </div>
-        </section>
+        <LearningPath />
       </main>
     </Layout>
   );

@@ -1,5 +1,5 @@
 import os
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,7 +16,9 @@ class Settings(BaseSettings):
     # Google AI
     google_api_key: str = os.getenv("GOOGLE_API_KEY")
 
+
     class Config:
         case_sensitive = True
-
+        
 settings = Settings()
+

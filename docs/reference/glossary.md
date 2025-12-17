@@ -10,11 +10,13 @@ learning_objectives:
   - "Provide quick definitions for key terms used in Physical AI and Humanoid Robotics"
 ---
 
+import GlossarySearch from '@site/src/components/GlossarySearch';
+
 # Glossary of Terms
 
 This glossary provides definitions for key terms used throughout the "Physical AI & Humanoid Robotics" textbook.
 
-*(Content to be developed - will be populated with 100+ robotics terms)*
+<GlossarySearch />
 
 ---
 
