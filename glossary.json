@@ -1,0 +1,46 @@
+[
+  {
+    "term": "Action Tokenization",
+    "definition": "The process of converting continuous robot actions into a discrete, tokenized format suitable for processing by large language models."
+  },
+  {
+    "term": "Actuator",
+    "definition": "A component of a machine that is responsible for moving and controlling a mechanism or system. It takes energy, usually created by air, electric current, or liquid, and converts that into motion."
+  },
+  {
+    "term": "Digital Twin",
+    "definition": "A virtual model designed to accurately reflect a physical object, process, or system. In robotics, it refers to a high-fidelity simulation environment (like Isaac Sim) that mirrors a physical robot."
+  },
+  {
+    "term": "Isaac ROS",
+    "definition": "A collection of GPU-accelerated packages for ROS 2 that provide high-performance solutions for common robotics tasks like perception, navigation, and manipulation, optimized for NVIDIA hardware."
+  },
+  {
+    "term": "Isaac Sim",
+    "definition": "An extensible, scalable robotics simulation platform built on NVIDIA Omniverse, used for developing, testing, and training AI-based robots."
+  },
+  {
+    "term": "Inverse Kinematics (IK)",
+    "definition": "The calculation of the joint parameters (angles or displacements) of a robot manipulator required to achieve a desired position and orientation of the end-effector."
+  },
+  {
+    "term": "ROS 2",
+    "definition": "An open-source, meta-operating system for robots. It provides services like hardware abstraction, low-level device control, implementation of commonly used functionalities, message-passing between processes, and package management."
+  },
+  {
+    "term": "Simultaneous Localization and Mapping (SLAM)",
+    "definition": "The computational problem of constructing or updating a map of an unknown environment while simultaneously keeping track of an agent's location within it."
+  },
+  {
+    "term": "tf2",
+    "definition": "The ROS 2 library for managing coordinate transforms. It allows you to keep track of multiple coordinate frames and transform points, vectors, and other entities between them."
+  },
+  {
+    "term": "Universal Scene Description (USD)",
+    "definition": "An open-source 3D scene description technology developed by Pixar for content creation and interchange. It's the native format for NVIDIA Omniverse."
+  },
+  {
+    "term": "Vision-Language-Action (VLA) Models",
+    "definition": "AI models that integrate visual perception, natural language understanding, and robotic action generation to enable robots to perform tasks based on high-level commands and environmental context."
+  }
+]
