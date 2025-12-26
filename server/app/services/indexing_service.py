@@ -6,11 +6,13 @@ from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.models import UpdateStatus
 
+from ..core.config import settings
+
 class IndexingService:
     def __init__(self, qdrant_client: QdrantClient, collection_name: str):
         self.qdrant_client = qdrant_client
         self.collection_name = collection_name
-        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+        self.embedding_model = SentenceTransformer(settings.embedding_model_name)
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
             chunk_overlap=300,

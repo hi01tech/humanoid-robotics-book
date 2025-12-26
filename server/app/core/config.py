@@ -53,6 +53,13 @@ class Settings(BaseSettings):
     # Google AI
     google_api_key: str = os.getenv("GOOGLE_API_KEY")
 
+    # Embedding model
+    embedding_model_name: str = os.getenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
+    cross_encoder_model_name: str = os.getenv("CROSS_ENCODER_MODEL_NAME", "cross-encoder/ms-marco-MiniLM-L-6-v2")
+
+    # Docusaurus Base URL
+    base_url: str = os.getenv("BASE_URL", "/humanoid-robotics-book/")
+
     class Config:
         case_sensitive = True
         

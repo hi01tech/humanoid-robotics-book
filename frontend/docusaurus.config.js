@@ -21,7 +21,9 @@ const config = {
   organizationName: 'hi01tech', // Usually your GitHub org/user name.
   projectName: 'humanoid-robotics-book', // Usually your repo name.
 
-  onBrokenLinks: 'throw',
+  deploymentBranch: 'gh-pages',
+
+  onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
 
   // Even if you don't use internalization, you can use this field to set useful
@@ -67,6 +69,7 @@ const config = {
             label: 'Textbook',
           },
           {to: '/search', label: 'Search', position: 'right'},
+          {to: '/chatbot', label: 'Chatbot', position: 'right'},
         ],
       },
       footer: {
@@ -77,6 +80,11 @@ const config = {
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
+      },
+      colorMode: {
+        defaultMode: 'light',
+        disableSwitch: false,
+        respectPrefersColorScheme: true,
       },
     }),
 };

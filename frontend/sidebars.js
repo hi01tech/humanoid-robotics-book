@@ -54,8 +54,8 @@ const sidebars = {
         slug: '/ros2-module',
       },
       items: [
-        'ros2/week4',
-        'ros2/week5',
+        'ros2/ros2-week4',
+        'ros2/ros2-week5',
         'ros2/tf2',
         'ros2/urdf',
       ],

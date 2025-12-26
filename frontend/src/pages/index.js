@@ -4,55 +4,22 @@ import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import styles from './index.module.css';
+import useTranslate from '../hooks/useTranslate'; // Import the hook
 
 // Import the hero image
 import HeroBotImage from '@site/src/img/robot-landing.png';
 
-const learningPathItems = [
-  
-  {
-    title: 'Module 1: ROS 2 Ecosystem',
-    description: 'Master the core concepts of the Robot Operating System for complex applications.',
-    learningOutcomes: [
-      'Navigate ROS 2 communication patterns',
-      'Develop Python-based ROS 2 nodes',
-      'Utilize launch files and parameters',
-    ],
-    link: '/docs/ros2/week4',
-  },
-  {
-    title: 'Module 2: Simulation & Digital Twins',
-    description: 'Use NVIDIA Isaac Sim to create photorealistic, physically-accurate digital twins.',
-    learningOutcomes: [
-      'Import robot models into Isaac Sim',
-      'Configure simulated sensors',
-      'Integrate with ros2_control',
-    ],
-    link: '/docs/digital-twin/week6',
-  },
-  {
-    title: 'Module 3: The AI-Robot Brain (NVIDIA Isaac™)',
-    description: 'Build scalable robotics simulation application and synthetic data generation.',
-    learningOutcomes: [
-      'Master kinematics and dynamics',
-      'Understand real-time control principles',
-      'Implement sensor fusion techniques',
-    ],
-    link: '/docs/isaac-sim/week8  ',
-  },
-  {
-    title: 'Module 4: Vision-Language-Action (VLA)',
-    description: 'Implement advanced perception and decision-making with Isaac ROS and VLAs.',
-    learningOutcomes: [
-      'Accelerate perception with Isaac ROS',
-      'Implement SLAM and object detection',
-      'Explore Vision-Language-Action models',
-    ],
-    link: '/docs/vla/vla-week11',
-  },
-];
+import learningPathItems from '@site/static/learningPath.json';
+
+import WhatsNew from '@site/src/components/WhatsNew';
+import About from '@site/src/components/About';
 
 function HeroSplit() {
+  const { translatedText: translatedTitle } = useTranslate("Master Humanoid Robotics");
+  const { translatedText: translatedSubtitle } = useTranslate(
+    "A deep dive into the engineering, AI, and control systems of bipedal machines."
+  );
+
   return (
     <header className={clsx('hero', styles.heroSplit)}>
       <div className={clsx('container', styles.heroContainer)}>
@@ -67,15 +34,12 @@ function HeroSplit() {
 
         {/* Right Column: Text and CTA */}
         <div className={styles.heroTextContainer}>
-          <h1 className="hero__title">Master Humanoid Robotics</h1>
-          <p className="hero__subtitle">
-            A deep dive into the engineering, AI, and control systems of
-            bipedal machines.
-          </p>
+          <h1 className="hero__title">{translatedTitle}</h1>
+          <p className="hero__subtitle">{translatedSubtitle}</p>
           <div>
             <Link
               className="button button--secondary button--lg " style={{ backgroundColor: '#aada8e' }}
-              to="/docs/intro"
+              to= "/docs/introduction/week1"
             >
               Start Learning
             </Link>
@@ -96,7 +60,10 @@ function LearningPath() {
               <Link to={item.link} className={styles.cardLink}>
                 <div className="card">
                   <div className="card__header">
-                    <h3>{item.title}</h3>
+                    <div className={styles.cardHeaderWithIcon}>
+                      
+                      <h3>{item.title}</h3>
+                    </div>
                   </div>
                   <div className="card__body">
                     <p>{item.description}</p>
@@ -129,6 +96,8 @@ export default function Home() {
       <HeroSplit />
       <main>
         <LearningPath />
+        <WhatsNew />
+        <About />
       </main>
     </Layout>
   );

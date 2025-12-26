@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from server.app.api import rag
-from server.app.core import config
+from .api import rag, translation # Updated imports
+from .core import config
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
 
 app = FastAPI(
     title="Humanoid Robotics Textbook RAG API",
@@ -24,7 +23,6 @@ app = FastAPI(
 async def lifespan(app: FastAPI):
     # --- Everything before 'yield' runs on STARTUP ---
     print("Server is starting up...")
-    # If you have specific startup logic, put it here
     yield
     # --- Everything after 'yield' runs on SHUTDOWN ---
     print("Server is shutting down...")
@@ -44,6 +42,7 @@ app.add_middleware(
 )
 
 app.include_router(rag.router, prefix="/rag", tags=["RAG"])
+app.include_router(translation.router, prefix="/api", tags=["Translation"]) # Include translation router
 
 @app.get("/")
 def read_root():

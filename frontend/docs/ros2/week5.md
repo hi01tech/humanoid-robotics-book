@@ -1,104 +1,161 @@
 ---
-id: week5
-title: 'Module 1: ROS 2 Services & Actions'
-sidebar_label: 'Week 5: Services & Actions'
+id: ros2-week5
+title: "Week 5: Transforms and URDFs in ROS 2"
+slug: /ros2/week5
+sidebar_label: "Week 5: Transforms & URDFs"
+estimated_time: 4
+week: 5
+module: ROS 2 Ecosystem
+prerequisites: ["ros2-week4"]
+learning_objectives:
+  - "Understand the importance of coordinate frames in robotics."
+  - "Use `tf2` to broadcast and listen to coordinate transformations."
+  - "Create a Unified Robot Description Format (URDF) file for a simple robot."
+  - "Visualize a robot model in RViz2."
 ---
 
-## Week 5: ROS 2 Services and Actions
+# Week 5: Transforms and URDFs in ROS 2
 
-This week, we expand on our ROS 2 knowledge by exploring two additional communication patterns: Services and Actions. These are essential for request/response and long-running tasks in robotics.
+This week, we will tackle two of the most important concepts in ROS 2: coordinate transformations (`tf2`) and robot descriptions (URDF). These are the tools that allow us to represent and track the state of a robot in a 3D world.
 
-### ROS 2 Services
+## Topics Covered
 
-Services are used for synchronous request/response communication. A "service client" sends a request to a "service server," which processes the request and sends back a response. This is useful for tasks that should be completed quickly and will always result in a response. For example, a service could be used to query the current position of a robot's arm.
+-   **Coordinate Frames:** Why we need them and how they work.
+-   **The `tf2` Library:** Broadcasting and listening to transforms.
+-   **Static and Dynamic Transforms:** Representing fixed and moving parts of a robot.
+-   **Unified Robot Description Format (URDF):** Describing a robot's physical properties.
+-   **RViz2:** Visualizing robot models and `tf2` frames.
 
-Let's create a simple service that adds two integers.
+## Coordinate Frames
 
-#### Service Definition (`.srv` file)
-First, we need to define the service interface in a `.srv` file. Let's call it `AddTwoInts.srv`.
+In robotics, we are always dealing with objects in a 3D world. To describe the position and orientation of these objects, we use **coordinate frames**. A coordinate frame is a set of three orthogonal axes (x, y, and z) that define a coordinate system.
 
-```
-int64 a
-int64 b
----
-int64 sum
-```
-The part above the `---` is the request, and the part below is the response.
+A robot is a collection of different parts, each with its own coordinate frame. For example, a humanoid robot might have a coordinate frame for its base, another for its torso, one for each arm, and one for each leg. On top of that, you might have a coordinate frame for a camera, a Lidar, and any other sensors on the robot.
 
-#### Service Server Node
+The `tf2` library in ROS 2 is a tool for keeping track of all these different coordinate frames and the transformations between them.
 
-Here is the Python code for the service server.
+## The `tf2` Library
+
+`tf2` is a powerful library that lets you keep track of multiple coordinate frames over time. It maintains a tree of coordinate frames and allows you to ask for the transformation between any two frames at any point in time.
+
+### Broadcasting Transforms
+
+A **transform** is a set of instructions that tells you how to get from one coordinate frame to another. It consists of a translation (a 3D vector) and a rotation (a quaternion).
+
+A `tf2` **broadcaster** is a node that publishes transforms. For example, you might have a node that reads the joint angles of a robot arm and publishes the transforms for each link in the arm.
+
+Here is a simple example of a `tf2` broadcaster that publishes a static transform between a `world` frame and a `robot` frame:
 
 ```python
-# add_two_ints_server.py
-from example_interfaces.srv import AddTwoInts
 import rclpy
 from rclpy.node import Node
+from geometry_msgs.msg import TransformStamped
+from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 
-class MinimalService(Node):
+class StaticFramePublisher(Node):
+    """
+    Publishes a static transform between the 'world' and 'robot' frames.
+    """
     def __init__(self):
-        super().__init__('minimal_service')
-        self.srv = self.create_service(AddTwoInts, 'add_two_ints', self.add_two_ints_callback)
+        super().__init__('static_transform_publisher')
+        self._tf_publisher = StaticTransformBroadcaster(self)
 
-    def add_two_ints_callback(self, request, response):
-        response.sum = request.a + request.b
-        self.get_logger().info(f'Incoming request\na: {request.a} b: {request.b}')
-        self.get_logger().info(f'Sending back response: [{response.sum}]')
-        return response
+        # Publish a static transform once on startup
+        self.make_transforms()
 
-def main(args=None):
-    rclpy.init(args=args)
-    minimal_service = MinimalService()
-    rclpy.spin(minimal_service)
-    minimal_service.destroy_node()
-    rclpy.shutdown()
+    def make_transforms(self):
+        t = TransformStamped()
+
+        t.header.stamp = self.get_clock().now().to_msg()
+        t.header.frame_id = 'world'
+        t.child_frame_id = 'robot'
+
+        t.transform.translation.x = 1.0
+        t.transform.translation.y = 2.0
+        t.transform.translation.z = 0.0
+
+        # No rotation in this example
+        t.transform.rotation.x = 0.0
+        t.transform.rotation.y = 0.0
+        t.transform.rotation.z = 0.0
+        t.transform.rotation.w = 1.0
+
+        self._tf_publisher.sendTransform(t)
+
+def main():
+    rclpy.init()
+    node = StaticFramePublisher()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
 ```
 
-#### Service Client Node
+### Listening for Transforms
 
-Here is the Python code for the service client that calls the server.
+A `tf2` **listener** is a node that subscribes to the `/tf` topic and can be used to get the transformation between any two coordinate frames.
 
-```python
-# add_two_ints_client.py
-from example_interfaces.srv import AddTwoInts
-import rclpy
-from rclpy.node import Node
+For example, if you have a Lidar on your robot, you might want to transform the Lidar data from the `lidar` frame to the `world` frame to see where the obstacles are in the world.
 
-class MinimalClientAsync(Node):
-    def __init__(self):
-        super().__init__('minimal_client_async')
-        self.cli = self.create_client(AddTwoInts, 'add_two_ints')
-        while not self.cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
-        self.req = AddTwoInts.Request()
+We will see examples of `tf2` listeners in later weeks when we start working with sensor data.
 
-    def send_request(self, a, b):
-        self.req.a = a
-        self.req.b = b
-        self.future = self.cli.call_async(self.req)
-        rclpy.spin_until_future_complete(self, self.future)
-        return self.future.result()
 
-def main(args=None):
-    rclpy.init(args=args)
-    minimal_client = MinimalClientAsync()
-    response = minimal_client.send_request(5, 10)
-    minimal_client.get_logger().info(
-        f'Result of add_two_ints: for 5 + 10 = {response.sum}')
-    minimal_client.destroy_node()
-    rclpy.shutdown()
+## Unified Robot Description Format (URDF)
 
-if __name__ == '__main__':
-    main()
+A URDF file is an XML file that describes the physical properties of a robot. It is a tree of **links** and **joints**.
+
+*   A **link** is a rigid part of the robot, like a a wheel, a leg, or a torso. Each link has a name and can have visual and collision properties.
+*   A **joint** connects two links and defines how they can move relative to each other. A joint can be `revolute` (for a rotating joint), `prismatic` (for a sliding joint), `fixed` (for a joint that doesn't move), or `continuous` (for a joint that can rotate continuously).
+
+Here is a simple example of a URDF file for a two-wheeled robot:
+
+```xml
+<?xml version="1.0"?>
+<robot name="my_robot">
+
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.1" radius="0.2"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <link name="left_wheel">
+    <visual>
+      <geometry>
+        <cylinder length="0.05" radius="0.1"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="base_to_left_wheel" type="continuous">
+    <parent link="base_link"/>
+    <child link="left_wheel"/>
+    <origin xyz="0 0.25 -0.05"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+</robot>
 ```
 
-### ROS 2 Actions
+This URDF defines a robot with a `base_link` and a `left_wheel`, connected by a `continuous` joint.
 
-Actions are used for long-running tasks that provide feedback during execution. Think of navigating a robot to a goal position. This task might take a while, and you'd want to receive updates on its progress. Actions consist of a goal, feedback, and a result.
+## RViz2
 
-An "action client" sends a goal to an "action server". The server executes the goal, provides periodic feedback to the client, and sends a final result when the task is complete. This is an asynchronous process.
+RViz2 is a powerful 3D visualization tool for ROS 2. It allows you to see what your robot is doing and to debug your robotics application.
 
-Due to the complexity of a full action example, we will revisit a practical implementation in a later module when we work with navigation. The core concept to remember is that actions are for tasks that take time and where you need to know what's happening during execution.
+With RViz2, you can:
+*   Visualize your robot model (from a URDF file).
+*   Display `tf2` frames to see the relationship between different coordinate frames.
+*   Visualize sensor data, such as Lidar scans, camera images, and point clouds.
+*   Display the output of your navigation and manipulation algorithms.
+
+RViz2 is an essential tool for any ROS 2 developer, and we will be using it extensively throughout this course.
+

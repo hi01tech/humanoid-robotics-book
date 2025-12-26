@@ -1,0 +1,43 @@
+/* frontend/src/components/LanguageToggle.module.css */
+
+.languageToggle {
+  /* Ensure it sits nicely in the navbar */
+  display: flex;
+  align-items: center;
+  margin-left: 0.5rem; /* Adjust spacing from other navbar items */
+}
+
+.languageSelect {
+  /* Style the select element */
+  background-color: var(--ifm-navbar-background-color);
+  color: var(--ifm-navbar-link-color);
+  border: 1px solid var(--ifm-navbar-background-color);
+  border-radius: var(--ifm-global-radius);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  -webkit-appearance: none; /* Remove default browser styling */
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2327693f%22%20d%3D%22M287%2C197.973L146.202%2C57.175L5.404%2C197.973H287z%22%2F%3E%3C%2Fsvg%3E'); /* Custom arrow for dropdown */
+  background-repeat: no-repeat;
+  background-position: right 0.7em top 50%, 0 0;
+  background-size: 0.65em auto, 100%;
+}
+
+.languageSelect:hover {
+  border-color: var(--ifm-color-primary);
+}
+
+.languageSelect:focus {
+  outline: none;
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 0 0 2px var(--ifm-color-primary-light);
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] .languageSelect {
+  background-color: var(--ifm-navbar-background-color);
+  color: var(--ifm-font-color-base);
+  border-color: var(--ifm-navbar-background-color);
+}

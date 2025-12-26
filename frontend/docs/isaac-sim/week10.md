@@ -1,112 +1,90 @@
 ---
 id: week10
-title: 'Module 3: Synthetic Data Generation'
-sidebar_label: 'Week 10: Synthetic Data'
+title: "Week 10: Task & Motion Planning"
+slug: /isaac-sim/week10
+sidebar_label: "Week 10: Task & Motion Planning"
+estimated_time: 5
+week: 10
+module: The AI-Robot Brain (NVIDIA Isaac™)
+prerequisites: ["week9"]
+learning_objectives:
+  - "Understand the difference between task planning and motion planning."
+  - "Use a motion planner to generate collision-free paths."
+  - "Implement a simple task planner to sequence actions."
+  - "Integrate motion planning with a behavior tree."
 ---
 
-## Week 10: Generating Synthetic Data for Perception
+# Week 10: Task & Motion Planning
 
-One of the most powerful features of Isaac Sim is its ability to generate large, high-quality, and automatically labeled datasets for training perception models. In robotics, collecting and labeling real-world data is often expensive, time-consuming, and sometimes dangerous. Synthetic data provides a solution to bootstrap and augment real-world datasets.
+This week, we will give our robot the ability to reason about and plan its actions. We will explore the concepts of task planning and motion planning, and how they work together to enable intelligent behavior.
 
-### What is Synthetic Data?
+## Topics Covered
 
-Synthetic data is data that is generated artificially rather than being collected from the real world. In the context of Isaac Sim, this typically refers to:
-*   **Photorealistic Images:** Rendered images from cameras within the simulation.
-*   **Labels and Annotations:** Pixel-perfect annotations that are generated automatically alongside the images. These can include:
-    *   **Bounding Boxes (2D and 3D):** Boxes drawn around objects of interest.
-    *   **Semantic Segmentation:** A label for every pixel in the image, indicating what type of object it belongs to (e.g., "robot," "table," "floor").
-    *   **Instance Segmentation:** Similar to semantic segmentation, but distinguishes between different instances of the same object type.
-    *   **Depth Images:** An image where each pixel's value represents the distance from the camera to that point in the scene.
+-   **The Planning Hierarchy:** From high-level goals to low-level motor commands.
+-   **Collision-Free Motion Planning:** A* and RRT algorithms.
+-   **Task Planning with State Machines and Behavior Trees:** Two common approaches.
+-   **Integrating Planning with Execution:** How to make your robot *do* what it *thinks*.
 
-Because this data is generated from the simulation ground truth, the labels are perfectly accurate and require no manual effort.
+This week, we will give our robot the ability to reason about and plan its actions. We will explore the concepts of task planning and motion planning, and how they work together to enable intelligent behavior.
 
-### Domain Randomization
+## The Planning Hierarchy
 
-A key challenge when using synthetic data is the "domain gap" - the difference between the simulated and real worlds. A model trained purely on non-randomized synthetic data may not perform well on real-world images. To overcome this, we use **Domain Randomization**.
+Robot intelligence is often structured in a **planning hierarchy**, where different levels of abstraction handle increasingly detailed aspects of behavior:
 
-Domain Randomization involves randomly changing aspects of the simulation environment during data generation. This forces the model to learn the essential features of the objects it's trying to detect, rather than memorizing the specific details of the simulated environment.
+1.  **Task Planning (High-Level):** Decides *what* the robot should do. This involves symbolic reasoning about goals, preconditions, and effects of actions. For example, "go to the kitchen and make coffee."
+2.  **Motion Planning (Mid-Level):** Decides *how* the robot should execute a task, generating a collision-free path for the robot's end-effector or base. For example, "move the gripper from current position to position X, avoiding obstacle Y."
+3.  **Trajectory Generation (Low-Level):** Converts the planned path into smooth, time-parametrized joint commands that respect the robot's physical limits (velocity, acceleration).
+4.  **Control (Lowest-Level):** Executes the trajectory by sending commands to the robot's joint motors (e.g., using PID controllers as discussed in Week 8).
 
-In Isaac Sim, you can randomize:
-*   **Textures and Materials:** The appearance of objects, walls, and floors.
-*   **Lighting:** The position, orientation, color, and intensity of lights.
-*   **Object Pose:** The position and orientation of objects in the scene.
-*   **Camera Pose:** The position and orientation of the camera.
+This hierarchical approach breaks down complex problems into manageable sub-problems, making it easier to design and debug robot behaviors.
 
-By training on a dataset with wide domain randomization, the real world can appear to the model as just another variation of the simulation.
+## Collision-Free Motion Planning
 
-### The Replicator Workflow in Isaac Sim
+**Motion planning** is the process of finding a sequence of valid configurations that moves a robot from a start configuration to a goal configuration while avoiding collisions with obstacles and respecting joint limits. For humanoid robots, motion planning is particularly challenging due to their high dimensionality and the need to maintain balance.
 
-Isaac Sim includes a powerful tool called the **Replicator** for setting up and running synthetic data generation pipelines. The Replicator works as a graph, much like the Action Graph, allowing you to define the randomization and data output process.
+### Popular Motion Planning Algorithms
 
-Here is a conceptual Python script using the Replicator API to generate a dataset of images with bounding box labels:
+*   **A* (A-star) Algorithm:** A popular pathfinding algorithm that finds the shortest path between two points in a grid-based map. It is guaranteed to find the optimal path if one exists but can be computationally expensive in high-dimensional spaces.
+*   **RRT (Rapidly-exploring Random Tree) and RRT* Algorithms:** These are sampling-based algorithms well-suited for high-dimensional spaces. They build a tree of possible paths by randomly sampling configurations and connecting them to the nearest existing node in the tree.
+    *   **RRT:** Explores the configuration space efficiently but does not guarantee optimality.
+    *   **RRT*:** An extension of RRT that aims for asymptotic optimality, meaning it converges to an optimal path as the number of samples approaches infinity.
+*   **PRM (Probabilistic RoadMap) Algorithm:** Another sampling-based method that constructs a roadmap in the configuration space during a preprocessing phase. This roadmap can then be used to query paths efficiently between different start and goal configurations.
 
-```python
-import omni.replicator.core as rep
+These algorithms are often implemented in libraries like OMPL (Open Motion Planning Library) and integrated into robotic frameworks like MoveIt for ROS 2.
 
-# Define the paths to your 3D models (USD files)
-# These could be objects you want to learn to detect
-OBJECT_ASSET_PATHS = ["/path/to/object1.usd", "/path/to/object2.usd"]
+## Task Planning with State Machines and Behavior Trees
 
-# --- Define Randomizers ---
+While motion planning deals with *how* to move, **task planning** addresses *what* actions to take and in what order. Two popular approaches for task planning in robotics are state machines and behavior trees.
 
-# 1. Randomizer for creating the objects themselves
-def create_random_objects():
-    # Create a layer to hold the objects
-    with rep.layer("objects"):
-        # For each object, add it to the scene at a random pose
-        rep.create.from_usd(
-            rep.distribution.choice(OBJECT_ASSET_PATHS),
-            count=5 # Create 5 objects per frame
-        )
-    return rep.get.prims(from_layer="objects")
+### State Machines
 
-# 2. Randomizer for the material/look of the objects
-def randomize_materials(prims):
-    # For the given prims, apply a random material
-    with prims:
-        rep.modify.material(
-            rep.distribution.choice(
-                [rep.get.material("/path/to/material1.mdl"), rep.get.material("/path/to/material2.mdl")]
-            )
-        )
-    return prims
+As discussed in Week 8, state machines are excellent for modeling sequential processes with distinct states and transitions. In task planning, each state could represent a major step in a task (e.g., "go to table", "pick up object", "place object"). Transitions occur based on the successful completion of a sub-task or an external event.
 
-# 3. Randomizer for the pose of the objects
-def randomize_pose(prims):
-    with prims:
-        rep.modify.pose(
-            position=rep.distribution.uniform((-100, 0, 0), (100, 0, 100)), # Random x and z position
-            rotation=rep.distribution.uniform((0, -180, 0), (0, 180, 0)) # Random yaw
-        )
-    return prims
+*   **Pros:** Easy to understand for simple, sequential tasks; clear definition of states and transitions.
+*   **Cons:** Can become complex and hard to manage for highly reactive or parallel behaviors.
 
-# --- Register Randomizers with the Replicator Trigger ---
+### Behavior Trees
 
-# `rep.trigger.on_frame()` causes this graph to be re-evaluated every frame
-with rep.trigger.on_frame():
-    # Chain the randomizers together
-    prims = create_random_objects()
-    prims = randomize_materials(prims)
-    prims = randomize_pose(prims)
-    
-# --- Define the Output (Annotator) ---
+**Behavior Trees** (BTs) offer a more modular and flexible way to represent complex robot behaviors, especially those requiring reactive and hierarchical control. A behavior tree is a directed acyclic graph where nodes are either **control flow nodes** (composites) or **execution nodes** (leaves).
 
-# 1. Create a camera
-camera = rep.create.camera()
+*   **Control Flow Nodes:**
+    *   **Sequences (`->`):** Execute children from left to right until one fails; if all succeed, the sequence succeeds.
+    *   **Fallbacks (`?`):** Execute children from left to right until one succeeds; if all fail, the fallback fails.
+    *   **Parallels (`=>`):** Execute multiple children concurrently.
+*   **Execution Nodes:**
+    *   **Conditions:** Check if a certain condition is met.
+    *   **Actions:** Perform a specific action (e.g., call a motion planner, open a gripper).
 
-# 2. Create an annotator to generate the data
-annotator = rep.AnnotatorRegistry.get_annotator("bounding_box_2d_tight")
-annotator.attach([camera])
+Behavior trees allow for highly modular, readable, and reusable behavior logic. They naturally handle preemption and reactivity, making them very popular in modern robotics and game AI.
 
-# 3. Tell the Replicator what to output
-# The output will be saved in a folder structure specified by the writer
-writer = rep.WriterRegistry.get("BasicWriter")
-writer.initialize(output_dir="_output", rgb=True, bounding_box_2d_tight=True)
-writer.attach([camera])
+## Integrating Planning with Execution
 
-# To run this, you would typically use the `omni.replicator.core.orchestrator.run()` function
-```
+The real challenge lies in integrating these planning layers (task and motion) with the robot's actual execution.
 
-This script sets up a pipeline that, on every frame, creates 5 random objects, assigns them random materials, and places them at random positions. It then captures an image from a camera and saves both the image and the corresponding 2D bounding box data to a directory. This output can then be directly used to train a model with a framework like PyTorch or TensorFlow.
+1.  **Task Planner Output:** A task planner (e.g., a behavior tree) might output a high-level sequence of actions like "Approach object", "Grasp object", "Lift object".
+2.  **Motion Planner Input:** Each of these high-level actions needs to be translated into inputs for the motion planner. For "Approach object," the motion planner would receive a target pose for the robot's end-effector relative to the object.
+3.  **Controller Input:** The motion planner then generates a trajectory (a series of joint positions, velocities, and accelerations over time), which is fed to the low-level joint controllers (e.g., `ros2_control` with PID loops) for execution.
+4.  **Feedback and Replanning:** The execution system provides feedback (e.g., current joint positions, sensor readings, success/failure of an action) to both the motion planner (for dynamic obstacle avoidance or replanning) and the task planner (to decide the next action or handle failures).
 
-Synthetic data generation is a transformative technology for robotics, and Isaac Sim provides a state-of-the-art toolset to leverage it.
+This iterative loop of planning, execution, and feedback allows the robot to achieve its goals robustly in dynamic and uncertain environments.
+

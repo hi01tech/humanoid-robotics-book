@@ -1,6 +1,7 @@
 ---
 id: foundations-week1
 title: "Week 1: Introduction to Humanoid Robotics & Kinematics"
+slug: /introduction/week1
 sidebar_label: "Week 1: Intro & Kinematics"
 estimated_time: 3
 week: 1

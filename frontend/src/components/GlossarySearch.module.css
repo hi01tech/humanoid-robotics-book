@@ -5,12 +5,14 @@
   font-size: 1.1rem;
   border: 1px solid var(--ifm-color-emphasis-300);
   border-radius: var(--ifm-global-radius);
+  
 }
 
 .glossaryList {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  
 }
 
 .glossaryItem {

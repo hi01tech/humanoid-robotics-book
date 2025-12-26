@@ -1,3 +1,42 @@
 /**
  * Any custom CSS here will be applied to the site.
  */
+
+/* Custom styling for the Docusaurus "Back to Top" button */
+.theme-back-to-top-button {
+  background-color: #a0d481 !important; /* New accent green color, forced */
+  color: white !important; /* Ensure the arrow/icon is visible */
+  border-radius: 50%; /* Make it round */
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8; /* Slightly transparent when not hovered */
+  transition: opacity 0.3s ease, background-color 0.3s ease;
+}
+
+.theme-back-to-top-button:hover {
+  opacity: 1; /* Fully opaque on hover */
+  background-color: #7dbb5c !important; /* Slightly darker shade for hover, forced */
+}
+
+[data-theme='dark'] .heroSplit {
+  background-image: linear-gradient(to top, #1a2a1a, #0a3e34, #03201b, #000000);
+}
+
+[data-theme='dark'] .cardLink .card {
+  border: 1px solid var(--ifm-color-emphasis-400);
+}
+
+[data-theme='dark'] .updateItem {
+  border: 1px solid var(--ifm-color-emphasis-400);
+}
+
+[data-theme='dark'] .learningOutcomesHeading,
+[data-theme='dark'] .cardLink .card .card__header h3 {
+  color: var(--ifm-color-primary-light);
+}
+
+
+

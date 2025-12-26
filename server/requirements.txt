@@ -12,3 +12,5 @@ langchain
 sentence-transformers
 unstructured[md]
 google-genai
+pytest
+pytest-asyncio

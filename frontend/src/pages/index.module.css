@@ -45,6 +45,7 @@
 
 .cardContainer {
   margin-bottom: var(--ifm-spacing-lg);
+
 }
 
 /* 2.1 Grid Alignment: Ensure all cards in a row have equal height */
@@ -60,6 +61,7 @@
   display: block; /* Make the link fill the container */
   height: 100%;   /* Ensure link takes up full card height */
   box-shadow: #03201b;
+  border-width: 20px;
   
 }
 
@@ -77,6 +79,7 @@
   
   /* 2.3 Outline: Add a thin green border */
   border: 20px solid #15460b;
+  
   
   /* 2.4 Animation: Set up a smooth transition for hover effect */
   transition: all 0.3s ease;
@@ -134,6 +137,17 @@
     padding-left: 0;
     margin-top: 2rem;
   }
+}
+
+.cardHeaderWithIcon {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cardIcon {
+  width: 24px;
+  height: 24px;
 }
 
 /* Make grid 1-column on smaller screens */

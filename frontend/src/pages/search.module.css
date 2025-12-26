@@ -47,11 +47,43 @@
 }
 
 .sourceChunk {
+
   background-color: var(--ifm-color-emphasis-100);
+
   padding: 1rem;
+
   border-radius: var(--ifm-global-radius);
+
   margin-bottom: 1rem;
+
   font-size: 0.9rem;
+
   color: var(--ifm-color-emphasis-700);
+
   border: 1px solid var(--ifm-color-emphasis-200);
+
+}
+
+
+
+.sourceTitle {
+
+  font-weight: bold;
+
+  color: var(--ifm-color-primary); /* Use primary color for links */
+
+  text-decoration: underline;
+
+  margin-bottom: 0.5rem;
+
+}
+
+
+
+.sourceTitle:hover {
+
+  color: var(--ifm-color-primary-dark); /* Darken on hover */
+
+  text-decoration: none;
+
 }
