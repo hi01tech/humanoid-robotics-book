@@ -1,0 +1,42 @@
+[
+  {
+    "title": "Module 1: ROS 2 Ecosystem",
+    "description": "Master the core concepts of the Robot Operating System for complex applications.",
+    "learningOutcomes": [
+      "Navigate ROS 2 communication patterns",
+      "Develop Python-based ROS 2 nodes",
+      "Utilize launch files and parameters"
+    ],
+    "link": "/docs/ros2/week4"
+  },
+  {
+    "title": "Module 2: Simulation & Digital Twins",
+    "description": "Use NVIDIA Isaac Sim to create photorealistic, physically-accurate digital twins.",
+    "learningOutcomes": [
+      "Import robot models into Isaac Sim",
+      "Configure simulated sensors",
+      "Integrate with ros2_control"
+    ],
+    "link": "/docs/digital-twin/week6"
+  },
+  {
+    "title": "Module 3: The AI-Robot Brain (NVIDIA Isaac™)",
+    "description": "Build scalable robotics simulation application and synthetic data generation.",
+    "learningOutcomes": [
+      "Master kinematics and dynamics",
+      "Understand real-time control principles",
+      "Implement sensor fusion techniques"
+    ],
+    "link": "/docs/isaac-sim/week8"
+  },
+  {
+    "title": "Module 4: Vision-Language-Action (VLA)",
+    "description": "Implement advanced perception and decision-making with Isaac ROS and VLAs.",
+    "learningOutcomes": [
+      "Accelerate perception with Isaac ROS",
+      "Implement SLAM and object detection",
+      "Explore Vision-Language-Action models"
+    ],
+    "link": "/docs/vla/vla-week11"
+  }
+]
