@@ -5,7 +5,7 @@ class TranslationService:
     def __init__(self):
         # Configure the generative model for translation
         genai.configure(api_key=settings.google_api_key)
-        self.model = genai.GenerativeModel('gemini-2.5-flash')
+        self.model = genai.GenerativeModel('models/gemini-1.5-flash')
         self._cache = {} # Add cache
 
     def translate_text(self, text: str, target_language: str = "ur") -> str:
