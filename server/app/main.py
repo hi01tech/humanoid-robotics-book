@@ -31,6 +31,8 @@ app = FastAPI(lifespan=lifespan)
 # Set up CORS
 origins = [
     "http://localhost:3000", # The address of the Docusaurus dev server
+    "http://127.0.0.1:3000",          # Local Docusaurus (alternative)
+    "https://hi01tech.github.io",
 ]
 
 app.add_middleware(
