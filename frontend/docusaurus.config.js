@@ -14,14 +14,16 @@ const config = {
   url: 'https://hi01tech.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/humanoid-robotics-book/',
-
+  // baseUrl: '/humanoid-robotics-book/',
+  baseUrl: process.env.VERCEL ? '/' : '/humanoid-robotics-book/',
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'hi01tech', // Usually your GitHub org/user name.
   projectName: 'humanoid-robotics-book', // Usually your repo name.
 
   deploymentBranch: 'gh-pages',
+  trailingSlash: false, // Helps Vercel and GitHub agree on links
+
 
   onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
